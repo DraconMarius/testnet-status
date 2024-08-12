@@ -1,3 +1,3 @@
-DROP DATABASE IF EXISTS testnet_stat;
+DROP DATABASE IF EXISTS testnet_status;
 
-CREATE DATABASE testnet_stat;
+CREATE DATABASE testnet_status;

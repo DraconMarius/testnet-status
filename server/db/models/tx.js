@@ -1,5 +1,5 @@
 const { Model, DataTypes } = require("sequelize");
-const sequelize = require("./config/connection");
+const sequelize = require("../config/connection");
 
 class Tx extends Model { }
 
@@ -8,7 +8,7 @@ Tx.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         primaryKey: true,
-        autoIncrements: true,
+        autoIncrement: true,
     },
     net_id: {
         type: DataTypes.INTEGER,

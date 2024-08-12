@@ -8,7 +8,7 @@ Avg.init({
         type: DataTypes.INTEGER,
         allowNull: false,
         primaryKey: true,
-        autoIncrements: true,
+        autoIncrement: true,
     },
     net_id: {
         type: DataTypes.INTEGER,
