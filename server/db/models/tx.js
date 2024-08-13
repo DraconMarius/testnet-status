@@ -32,11 +32,16 @@ Tx.init({
     latency: {
         type: DataTypes.FLOAT,
         alowNull: true,
+    },
+    status: {
+        type: DataTypes.STRING,
+        allowNull: false,
     }
 }, {
     sequelize,
     timestamps: true,
-    undescored: true,
+    underscored: true,
+    freezeTableName: true,
     modelName: "tx",
 });
 

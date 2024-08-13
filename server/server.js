@@ -3,19 +3,25 @@ require("dotenv").config;
 const express = require("express");
 const session = require("express-session");
 
-const SequalizeStore = require("connect-session-sequlize")(session.Store);
+const SequalizeStore = require("connect-session-sequelize")(session.Store);
 
-const routes = require("./controllers");
+const routes = require("./controllers/index.js");
 const sequelize = require('./db/config/connection');
 
 const app = express();
+
+const PORT = process.env.PORT || 3001;
+
+const Net = require("./db/models/net");
+const Avg = require("./db/models/avg");
+const Tx = require("./db/models/tx");
 
 if (process.env.NODE_ENV === 'production') {
     app.use(express.static(path.join(__dirname, '../client/build')));
 }
 
 const sess = {
-    secret: "Abracadabra",
+    secret: process.env.SECRET,
     cookies: {},
     resave: false,
     saveUnintialized: true,
@@ -35,8 +41,12 @@ app.get('/*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build/index.html'));
 })
 
-sequelize.sync({ force: false }).then(() => {
-    app.listen(PORT, () =>
-        console.log(`now listening at http://localhost:${PORT}/`)
-    );
-});
+sequelize.sync({ force: false })
+    .then(() => Net.sync())
+    .then(() => Avg.sync())
+    .then(() => Tx.sync())
+    .then(() => {
+        app.listen(PORT, () => {
+            console.log(`now listening at http://localhost:${PORT}/`);
+        });
+    });
