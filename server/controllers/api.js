@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { Avg, Tx } = require("../db/models");
+const { Net, Avg, Tx } = require("../db/models");
 
 const { Alchemy, Network, Utils } = require('alchemy-sdk');
 
@@ -16,18 +16,18 @@ const configs = {
         apiKey: Key,
         network: Network.MATIC_AMOY
     },
-    Arbitrum: {
-        apiKey: Key,
-        network: Network.ARB_SEPOLIA
-    },
-    Optimism: {
-        apiKey: Key,
-        network: Network.OPT_SEPOLIA
-    },
-    Base: {
-        apiKey: Key,
-        network: Network.BASE_SEPOLIA
-    }
+    // Arbitrum: {
+    //     apiKey: Key,
+    //     network: Network.ARB_SEPOLIA
+    // },
+    // Optimism: {
+    //     apiKey: Key,
+    //     network: Network.OPT_SEPOLIA
+    // },
+    // Base: {
+    //     apiKey: Key,
+    //     network: Network.BASE_SEPOLIA
+    // }
 };
 
 
@@ -83,4 +83,65 @@ router.get("/avg", async (req, res) => {
         res.status(500).json(err);
     }
 });
+
+router.get("/pending", async (req, res) => {
+    console.log('==================DB has Tx Pending?==================');
+    const checkIfPending = async (netName) => {
+        try {
+            // Find the most recent transaction for the given net name
+            const prevTx = await Tx.findOne({
+                include: [
+                    {
+                        model: Net,
+                        where: { name: netName }, // Filter by net name
+                        attributes: [] // Exclude Net model attributes from the result
+                    }
+                ],
+                order: [['createdAt', 'DESC']] // Order by the most recent transaction
+            });
+
+            // If no transaction exists, return false
+            if (!prevTx) {
+                return {
+                    [netName]: false
+                };
+            }
+
+            // Check if the transaction status is 'pending'
+            if (prevTx.status === 'pending') {
+                return {
+                    [netName]: true
+                };
+            } else {
+                return {
+                    [netName]: false
+                };
+            }
+        } catch (err) {
+            console.error(`Error checking transaction status for net name ${netName}:`, err);
+            return {
+                [netName]: false
+            };;
+        }
+    };
+
+    try {
+        const results = await Promise.all(
+            Object.entries(configs).map(([net, config]) => {
+                return checkIfPending(net);
+            })
+        );
+
+        const combinedResults = results.reduce((net, result) => ({ ...net, ...result }), {});
+
+        res.json(combinedResults);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json(err);
+    }
+
+
+});
+
+router.post("")
 module.exports = router;
