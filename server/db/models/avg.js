@@ -16,6 +16,7 @@ Avg.init({
             model: "net",
             key: "id",
         },
+        allowNull: false,
     },
     count: {
         type: DataTypes.INTEGER,

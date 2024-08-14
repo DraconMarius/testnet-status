@@ -5,8 +5,6 @@ const { Alchemy, Network, Utils } = require('alchemy-sdk');
 
 const Key = process.env.ALCHEMY_API_KEY;
 
-const { calcAge } = require("../util/age")
-
 const configs = {
     Eth: {
         apiKey: Key,
@@ -30,12 +28,34 @@ const configs = {
     // }
 };
 
+const getID = async (net) => {
+    try {
+        const results = await Net.findOne({
+            where: {
+                name: net
+            }
+        });
+        idRes = results.get({ plain: true }); //<--- get plain true to return json data value
+        // console.log(idRes)
+        return (
+            idRes.id
+        );
+    } catch (err) {
+        console.error(err);
+        throw err;
+    }
+};
 
-router.get("/avg", async (req, res) => {
+
+
+
+router.post("/avg", async (req, res) => {
     console.log('==================average throughput==================');
 
-    const fetchBlocks = async (net, config) => {
+    const fetchBlocks = async (net, config, id) => {
         const alchemy = new Alchemy(config);
+
+        console.log(`id: ${id}`);
         try {
             const blockNum = await alchemy.core.getBlockNumber();
             const prevBlockNum = blockNum - 1;
@@ -45,21 +65,36 @@ router.get("/avg", async (req, res) => {
 
             const block1 = await alchemy.core.getBlock(blockNum);
             const block2 = await alchemy.core.getBlock(prevBlockNum);
+            console.log(block1);
+            console.log(block2)
 
             console.log(`Block1 timestamp: ${block1.timestamp}`);
             console.log(`Block2 timestamp: ${block2.timestamp}`);
 
             // Calculate the time difference in seconds
-            const tDiff = (block1.timestamp - block2.timestamp);
+            const tDiff = (block1.timestamp) - (block2.timestamp);
 
             console.log(`Time difference (seconds): ${tDiff}`);
 
-            const tDiffMin = tDiff / 60; //switch this out if need to have seconds
-            // Calculate average transactions per min
-            const averageTx = block1.transactions.length / tDiffMin;
+            // Calculate average transactions per sec
+            const averageTx = block1.transactions.length / tDiff;
+
+
+            const newAvg = {
+                net_id: id,
+                count: block1.transactions.length,
+                avgThroughput: averageTx,
+                timestamp: new Date(block1.timestamp * 1000)
+            };
+
+            const newAvgData = await Avg.create(newAvg);
+
 
             return {
-                [net]: `${averageTx} Transactions per minute`
+                [net]: {
+                    avg: `${averageTx} Transactions per sec`,
+                    db: { newAvgData }
+                }
             };
         } catch (err) {
             console.error(`Failed to fetch average for ${net}`);
@@ -69,9 +104,12 @@ router.get("/avg", async (req, res) => {
     };
 
     try {
+
         const results = await Promise.all(
-            Object.entries(configs).map(([net, config]) => {
-                return fetchBlocks(net, config);
+            Object.entries(configs).map(async ([net, config]) => {
+                const idData = await getID(net)
+
+                return await fetchBlocks(net, config, idData);
             })
         );
 
