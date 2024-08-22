@@ -183,48 +183,9 @@ router.post("/newTx", async (req, res) => {
                 const alchemy = new Alchemy(config);
                 const newTx = await sendTx(net, config, idData);
 
-
-                //try to get mined Time
-                const receipt = await alchemy.transact.getTransaction(newTx.hash)
-
-                if (receipt.confirmations > 0) {
-                    const block = await alchemy.core.getBlock(receipt.blockNumber)
-                    // console.log(block)
-                    const endTime = new Date(block.timestamp * 1000)
-                    // console.log(receipt.hash)
-                    const findTxStart = await Tx.findOne({
-                        where: {
-                            tx_hash: receipt.hash,
-                        },
-                        attributes: ['start_time'], // Retrieve only the start_time
-                    })
-                    const startTime = findTxStart.get({ plain: true });
-
-                    console.log(endTime, "endTime")
-                    console.log(startTime.start_time, "startTime")
-                    const latency = calcAge(startTime.start_time, endTime);
-                    console.log(latency)
-                    // Update the transaction status and latency
-                    const updateDB = await Tx.update({
-                        end_time: endTime,
-                        latency,
-                        status: 'complete'
-                    }, {
-                        where: {
-                            tx_hash: receipt.hash,
-                        }
-                    })
-
-                    return {
-                        [net]: {
-                            newTx,
-                            receipt,
-                            updateDB
-                        }
-                    }
-                } else {
-                    return {
-                        [net]: "Transaction still pending"
+                return {
+                    [net]: {
+                        newTx
                     }
                 }
 
@@ -237,7 +198,9 @@ router.post("/newTx", async (req, res) => {
     }
 });
 
-router.put("/TxStatus", async (req, res) => {
+//now using web socket in server.js
+
+router.put("/forceUpdate", async (req, res) => {
     console.log('==================checking and update status==================');
 
     const checkIfPending = async (netName) => {

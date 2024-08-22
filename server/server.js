@@ -16,6 +16,34 @@ const Net = require("./db/models/net");
 const Avg = require("./db/models/avg");
 const Tx = require("./db/models/tx");
 
+const { Alchemy, Network, AlchemySubscription } = require('alchemy-sdk');
+const { calcAge } = require('./util/age');
+const Key = process.env.ALCHEMY_API_KEY;
+
+
+const configs = {
+    Eth: {
+        apiKey: Key,
+        network: Network.ETH_SEPOLIA
+    },
+    Polygon: {
+        apiKey: Key,
+        network: Network.MATIC_AMOY
+    },
+    // Arbitrum: {
+    //     apiKey: Key,
+    //     network: Network.ARB_SEPOLIA
+    // },
+    // Optimism: {
+    //     apiKey: Key,
+    //     network: Network.OPT_SEPOLIA
+    // },
+    // Base: {
+    //     apiKey: Key,
+    //     network: Network.BASE_SEPOLIA
+    // }
+};
+
 // if (process.env.NODE_ENV === 'production') {
 //     app.use(express.static(path.join(__dirname, '../client/build')));
 // }
@@ -24,7 +52,7 @@ const sess = {
     secret: process.env.SECRET,
     cookies: {},
     resave: false,
-    saveUnintialized: true,
+    saveUninitialized: true,
     store: new SequalizeStore({
         db: sequelize,
     })
@@ -40,6 +68,66 @@ app.use(routes)
 // app.get('/*', (req, res) => {
 //     res.sendFile(path.join(__dirname, '../client/build/index.html'));
 // })
+
+const webSockets = {};
+console.log(process.env.FROM_ADDRESS)
+
+Object.entries(configs).forEach(([net, config]) => {
+    const alchemy = new Alchemy(config);
+    webSockets[net] = alchemy.ws;
+
+    alchemy.ws.on('open', () => {
+        console.log(`WebSocket connection opened for ${net} testnet`);
+    });
+
+    alchemy.ws.on({
+        method: AlchemySubscription.MINED_TRANSACTIONS,
+        addresses: [
+            {
+                from: process.env.FROM_ADDRESS,
+                to: process.env.TO_ADDRESS,
+            }]
+    }, async (tx) => {
+        // console.log({ tx });
+        try {
+            // Look up the transaction in the database by its hash
+            const foundTx = await Tx.findOne({ where: { tx_hash: tx.transaction.hash } });
+
+            if (foundTx) {
+                // The transaction is found and confirmed
+                const receipt = await alchemy.transact.getTransaction(tx.transaction.hash);
+                const block = await alchemy.core.getBlock(receipt.blockNumber);
+                const endTime = new Date(block.timestamp * 1000);
+
+                const latency = calcAge(foundTx.start_time, endTime);
+
+                // Update the transaction in the database
+                await Tx.update({
+                    end_time: endTime,
+                    latency,
+                    status: 'complete'
+                }, {
+                    where: { tx_hash: tx.transaction.hash }
+                });
+
+                console.log(`Transaction ${tx.transaction.hash} confirmed and updated in the database for ${net}.`);
+            } else {
+                console.log(`Transaction ${tx.transaction.hash} not found in the database for ${net}.`);
+            }
+        } catch (err) {
+            console.error(`Error processing mined transaction on ${net}:`, err);
+        }
+    });
+
+    alchemy.ws.on('error', (error) => {
+        console.error(`WebSocket error on ${net} testnet:`, error);
+    });
+
+    alchemy.ws.on('close', () => {
+        console.log(`WebSocket connection closed for ${net} testnet`);
+    });
+});
+//
 
 sequelize.sync({ force: false })
     .then(() => Net.sync())
