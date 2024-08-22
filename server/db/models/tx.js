@@ -30,7 +30,7 @@ Tx.init({
         allowNull: true,
     },
     latency: {
-        type: DataTypes.FLOAT,
+        type: DataTypes.STRING,
         alowNull: true,
     },
     status: {

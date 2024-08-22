@@ -1,7 +1,9 @@
 const router = require("express").Router();
 const { Net, Avg, Tx } = require("../db/models");
 
-const { Alchemy, Network, Utils } = require('alchemy-sdk');
+const { Alchemy, Network, Utils, Wallet } = require('alchemy-sdk');
+
+const { calcAge } = require('../util/age');
 
 const Key = process.env.ALCHEMY_API_KEY;
 
@@ -26,6 +28,14 @@ const configs = {
     //     apiKey: Key,
     //     network: Network.BASE_SEPOLIA
     // }
+};
+
+const chainId = {
+    Eth: 11155111,
+    Polygon: 80002,
+    Arbitrum: 421614,
+    Optimism: 11155420,
+    Base: 84532
 };
 
 const getID = async (net) => {
@@ -122,64 +132,202 @@ router.post("/avg", async (req, res) => {
     }
 });
 
-router.get("/pending", async (req, res) => {
-    console.log('==================DB has Tx Pending?==================');
-    const checkIfPending = async (netName) => {
+router.post("/newTx", async (req, res) => {
+    console.log('==================sending newTX==================');
+
+    const sendTx = async (net, config, id) => {
+        const alchemy = new Alchemy(config);
+        const wallet = new Wallet(process.env.SECRET_KEY);
+
         try {
-            // Find the most recent transaction for the given net name
-            const prevTx = await Tx.findOne({
-                include: [
-                    {
-                        model: Net,
-                        where: { name: netName }, // Filter by net name
-                        attributes: [] // Exclude Net model attributes from the result
-                    }
-                ],
-                order: [['createdAt', 'DESC']] // Order by the most recent transaction
+            const nonce = await alchemy.core.getTransactionCount(process.env.FROM_ADDRESS, "pending");
+            console.log(`${nonce} <- nonce`);
+
+            const valueETH = Utils.parseEther("0.00001");
+            console.log(valueETH)
+
+            const tx = {
+                to: process.env.TO_ADDRESS,
+                value: valueETH,
+                gasLimit: "21000",
+                maxPriorityFeePerGas: Utils.parseUnits("5", "gwei"),
+                maxFeePerGas: Utils.parseUnits("20", "gwei"),
+                nonce,
+                type: 2,
+                chainId: chainId[net],
+            };
+
+            const rawTx = await wallet.signTransaction(tx);
+            const sentTx = await alchemy.transact.sendTransaction(rawTx);
+            const startTime = new Date();
+
+            console.log({ sentTx });
+            // Store the new transaction in the database
+            const newTx = await Tx.create({
+                net_id: id,
+                tx_hash: sentTx.hash,
+                start_time: startTime,
+                status: 'pending'
             });
 
-            // If no transaction exists, return false
-            if (!prevTx) {
-                return {
-                    [netName]: false
-                };
-            }
-
-            // Check if the transaction status is 'pending'
-            if (prevTx.status === 'pending') {
-                return {
-                    [netName]: true
-                };
-            } else {
-                return {
-                    [netName]: false
-                };
-            }
+            return newTx;
         } catch (err) {
-            console.error(`Error checking transaction status for net name ${netName}:`, err);
-            return {
-                [netName]: false
-            };;
+            console.error(`Failed to send Tx on ${net} testnet`, err);
         }
     };
 
     try {
         const results = await Promise.all(
-            Object.entries(configs).map(([net, config]) => {
-                return checkIfPending(net);
-            })
-        );
+            Object.entries(configs).map(async ([net, config]) => {
+                const idData = await getID(net);
+                const alchemy = new Alchemy(config);
+                const newTx = await sendTx(net, config, idData);
 
+
+                //try to get mined Time
+                const receipt = await alchemy.transact.getTransaction(newTx.hash)
+
+                if (receipt.confirmations > 0) {
+                    const block = await alchemy.core.getBlock(receipt.blockNumber)
+                    // console.log(block)
+                    const endTime = new Date(block.timestamp * 1000)
+                    // console.log(receipt.hash)
+                    const findTxStart = await Tx.findOne({
+                        where: {
+                            tx_hash: receipt.hash,
+                        },
+                        attributes: ['start_time'], // Retrieve only the start_time
+                    })
+                    const startTime = findTxStart.get({ plain: true });
+
+                    console.log(endTime, "endTime")
+                    console.log(startTime.start_time, "startTime")
+                    const latency = calcAge(startTime.start_time, endTime);
+                    console.log(latency)
+                    // Update the transaction status and latency
+                    const updateDB = await Tx.update({
+                        end_time: endTime,
+                        latency,
+                        status: 'complete'
+                    }, {
+                        where: {
+                            tx_hash: receipt.hash,
+                        }
+                    })
+
+                    return {
+                        [net]: {
+                            newTx,
+                            receipt,
+                            updateDB
+                        }
+                    }
+                } else {
+                    return {
+                        [net]: "Transaction still pending"
+                    }
+                }
+
+            }))
         const combinedResults = results.reduce((net, result) => ({ ...net, ...result }), {});
-
         res.json(combinedResults);
     } catch (err) {
         console.error(err);
-        res.status(500).json(err);
+        res.status(500).json({ error: err });
     }
-
-
 });
 
-router.post("")
+router.put("/TxStatus", async (req, res) => {
+    console.log('==================checking and update status==================');
+
+    const checkIfPending = async (netName) => {
+        try {
+            const prevTx = await Tx.findOne({
+                include: [
+                    {
+                        model: Net,
+                        where: { name: netName },
+                        attributes: []
+                    }
+                ],
+                order: [['createdAt', 'DESC']]
+            });
+            // console.log(prevTx);
+            // If no transaction exists, return pending as false
+            if (!prevTx) {
+                return { txHash: null, pending: "complete" };
+            }
+
+            // Return the transaction hash and pending status
+            return { txHash: prevTx.tx_hash, pending: prevTx.status, startTime: prevTx.start_time };
+
+        } catch (err) {
+            console.error(`Error checking transaction status for net name ${netName}:`, err);
+            return { err };
+        }
+    };
+
+    try {
+        const results = await Promise.all(
+            Object.entries(configs).map(async ([net, config]) => {
+                const idData = await getID(net);
+                const pendingTx = await checkIfPending(net);
+                console.log(pendingTx)
+                const alchemy = new Alchemy(config);
+                if (!pendingTx.txHash || pendingTx.pending === "complete") {
+                    return { [net]: !pendingTx.txHash ? "no previous hash" : `previous hash already complete: ${pendingTx.txHash}` }
+                }
+
+                //try to get mined Time
+                const receipt = await alchemy.transact.getTransaction(pendingTx.txHash)
+
+                if (receipt.confirmations > 0) {
+                    const block = await alchemy.core.getBlock(receipt.blockNumber)
+                    // console.log(block)
+                    const endTime = new Date(block.timestamp * 1000)
+                    // console.log(receipt.hash)
+                    const findTxStart = await Tx.findOne({
+                        where: {
+                            tx_hash: receipt.hash,
+                        },
+                        attributes: ['start_time'], // Retrieve only the start_time
+                    })
+                    const startTime = findTxStart.get({ plain: true });
+
+                    console.log(endTime, "endTime")
+                    console.log(startTime.start_time, "startTime")
+                    const latency = calcAge(startTime.start_time, endTime);
+                    console.log(latency)
+                    // Update the transaction status and latency
+                    const updateDB = await Tx.update({
+                        end_time: endTime,
+                        latency,
+                        status: 'complete'
+                    }, {
+                        where: {
+                            tx_hash: receipt.hash,
+                        }
+                    })
+
+                    return {
+                        [net]: {
+                            receipt,
+                            updateDB
+                        }
+                    }
+                } else {
+                    return {
+                        [net]: "Transaction still pending"
+                    }
+                }
+
+            }))
+        const combinedResults = results.reduce((net, result) => ({ ...net, ...result }), {});
+        res.json(combinedResults);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;
