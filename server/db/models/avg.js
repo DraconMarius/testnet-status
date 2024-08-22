@@ -1,5 +1,5 @@
 const { Model, DataTypes } = require("sequelize");
-const sequelize = require("./config/connection");
+const sequelize = require("../config/connection");
 
 class Avg extends Model { }
 
@@ -16,6 +16,7 @@ Avg.init({
             model: "net",
             key: "id",
         },
+        allowNull: false,
     },
     count: {
         type: DataTypes.INTEGER,
@@ -33,7 +34,7 @@ Avg.init({
 }, {
     sequelize,
     freezeTableName: true,
-    undescored: true,
+    underscored: true,
     modelName: "avg",
 });
 

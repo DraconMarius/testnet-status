@@ -25,7 +25,6 @@ const netSeed = [
 ];
 
 const seedData = async () => {
-    await sequelize.sync({ force: true });
 
     await Net.bulkCreate(netSeed);
 

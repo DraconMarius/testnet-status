@@ -22,8 +22,9 @@ Net.init({
 }, {
     sequelize,
     timestamps: true,
-    undescored: true,
+    freezeTableName: true,
+    underscored: true,
     modelName: "net",
 });
 
-module.exports = Net
+module.exports = Net;
