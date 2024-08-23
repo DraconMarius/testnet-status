@@ -30,18 +30,18 @@ const configs = {
         apiKey: Key,
         network: Network.MATIC_AMOY
     },
-    // Arbitrum: {
-    //     apiKey: Key,
-    //     network: Network.ARB_SEPOLIA
-    // },
+    Arbitrum: {
+        apiKey: Key,
+        network: Network.ARB_SEPOLIA
+    },
     // Optimism: {
     //     apiKey: Key,
     //     network: Network.OPT_SEPOLIA
     // },
-    // Base: {
-    //     apiKey: Key,
-    //     network: Network.BASE_SEPOLIA
-    // }
+    Base: {
+        apiKey: Key,
+        network: Network.BASE_SEPOLIA
+    }
 };
 
 // if (process.env.NODE_ENV === 'production') {

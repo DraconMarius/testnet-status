@@ -23,7 +23,7 @@ Avg.init({
         allowNull: false,
     },
     avgThroughput: {
-        type: DataTypes.STRING(2000),
+        type: DataTypes.TEXT,
         allowNull: false,
     },
     timestamp: {

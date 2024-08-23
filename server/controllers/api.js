@@ -16,18 +16,18 @@ const configs = {
         apiKey: Key,
         network: Network.MATIC_AMOY
     },
-    // Arbitrum: {
-    //     apiKey: Key,
-    //     network: Network.ARB_SEPOLIA
-    // },
+    Arbitrum: {
+        apiKey: Key,
+        network: Network.ARB_SEPOLIA
+    },
     // Optimism: {
     //     apiKey: Key,
     //     network: Network.OPT_SEPOLIA
     // },
-    // Base: {
-    //     apiKey: Key,
-    //     network: Network.BASE_SEPOLIA
-    // }
+    Base: {
+        apiKey: Key,
+        network: Network.BASE_SEPOLIA
+    }
 };
 
 const chainId = {
@@ -62,43 +62,55 @@ const getID = async (net) => {
 router.post("/avg", async (req, res) => {
     console.log('==================average throughput==================');
 
-    const fetchBlocks = async (net, config, id) => {
+    const fetchBlocks = async (net, config, id, numBlocks = 5) => {
+
         const alchemy = new Alchemy(config);
 
         console.log(`id: ${id}`);
         try {
-            const blockNum = await alchemy.core.getBlockNumber();
-            const prevBlockNum = blockNum - 1;
+            let blockNum = await alchemy.core.getBlockNumber();
+            let totalTxCount = 0;
+            let earliestBlockTimestamp, latestBlockTimestamp;
 
-            console.log(blockNum, "<--block Num");
-            console.log(`${prevBlockNum}`);
+            console.log(`${net}: Querying the last ${numBlocks} blocks`);
 
-            const block1 = await alchemy.core.getBlock(blockNum);
-            const block2 = await alchemy.core.getBlock(prevBlockNum);
-            console.log(block1);
-            console.log(block2)
+            // Loop through the last `numBlocks` blocks
+            for (let i = 0; i < numBlocks; i++) {
+                const currentBlock = await alchemy.core.getBlock(blockNum);
+                totalTxCount += currentBlock.transactions.length;
 
-            console.log(`Block1 timestamp: ${block1.timestamp}`);
-            console.log(`Block2 timestamp: ${block2.timestamp}`);
+                // Track the earliest and latest timestamps
+                if (i === 0) {
+                    latestBlockTimestamp = currentBlock.timestamp;
+                }
+                if (i === numBlocks - 1) {
+                    earliestBlockTimestamp = currentBlock.timestamp;
+                }
 
-            // Calculate the time difference in seconds
-            const tDiff = (block1.timestamp) - (block2.timestamp);
+                console.log(`${net}'s Block ${blockNum} transaction count: ${currentBlock.transactions.length}`);
+                console.log(`${net}'s Block ${blockNum} timestamp: ${currentBlock.timestamp}`);
 
-            console.log(`Time difference (seconds): ${tDiff}`);
+                // Move to the previous block
+                blockNum -= 1;
+            }
 
-            // Calculate average transactions per sec
-            const averageTx = block1.transactions.length / tDiff;
+            // Calculate the total time difference between the earliest and latest blocks
+            const tDiff = latestBlockTimestamp - earliestBlockTimestamp;
+            console.log(`${net}'s Total time difference (seconds) across ${numBlocks} blocks: ${tDiff}`);
 
+            // Calculate average transactions per second
+            const averageTx = (totalTxCount / tDiff).toFixed(4);  // Precision set to 4 decimal places
+
+            console.log(`${net}'s average throughput: ${averageTx} Transactions per sec`);
 
             const newAvg = {
                 net_id: id,
-                count: block1.transactions.length,
-                avgThroughput: averageTx,
-                timestamp: new Date(block1.timestamp * 1000)
+                count: totalTxCount,  // Total transaction count from all queried blocks
+                avgThroughput: Number(averageTx),  // Ensure it's stored as a number
+                timestamp: new Date(latestBlockTimestamp * 1000)  // Use latest block's timestamp
             };
 
             const newAvgData = await Avg.create(newAvg);
-
 
             return {
                 [net]: {
@@ -114,12 +126,11 @@ router.post("/avg", async (req, res) => {
     };
 
     try {
-
         const results = await Promise.all(
             Object.entries(configs).map(async ([net, config]) => {
-                const idData = await getID(net)
+                const idData = await getID(net);
 
-                return await fetchBlocks(net, config, idData);
+                return await fetchBlocks(net, config, idData, 5);
             })
         );
 
@@ -131,6 +142,8 @@ router.post("/avg", async (req, res) => {
         res.status(500).json(err);
     }
 });
+
+
 
 router.post("/newTx", async (req, res) => {
     console.log('==================sending newTX==================');
@@ -149,7 +162,7 @@ router.post("/newTx", async (req, res) => {
             const tx = {
                 to: process.env.TO_ADDRESS,
                 value: valueETH,
-                gasLimit: "21000",
+                gasLimit: "20000",
                 maxPriorityFeePerGas: Utils.parseUnits("5", "gwei"),
                 maxFeePerGas: Utils.parseUnits("20", "gwei"),
                 nonce,
