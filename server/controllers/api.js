@@ -153,18 +153,24 @@ router.post("/newTx", async (req, res) => {
         const wallet = new Wallet(process.env.SECRET_KEY);
 
         try {
+            const gasPrices = await alchemy.core.getFeeData();
+            const maxPriorityFeePerGas = gasPrices.maxPriorityFeePerGas || Utils.parseUnits("5", "gwei");
+            const maxFeePerGas = gasPrices.maxFeePerGas || Utils.parseUnits("30", "gwei");
+
+            console.log(`${net} Gas Prices:', { maxPriorityFeePerGas, maxFeePerGas }`);
+
             const nonce = await alchemy.core.getTransactionCount(process.env.FROM_ADDRESS, "pending");
             console.log(`${nonce} <- nonce`);
 
             const valueETH = Utils.parseEther("0.00001");
-            console.log(valueETH)
+            console.log(valueETH);
 
             const tx = {
                 to: process.env.TO_ADDRESS,
                 value: valueETH,
-                gasLimit: "20000",
-                maxPriorityFeePerGas: Utils.parseUnits("5", "gwei"),
-                maxFeePerGas: Utils.parseUnits("20", "gwei"),
+                gasLimit: "80000",
+                maxPriorityFeePerGas,
+                maxFeePerGas,
                 nonce,
                 type: 2,
                 chainId: chainId[net],
@@ -193,7 +199,6 @@ router.post("/newTx", async (req, res) => {
         const results = await Promise.all(
             Object.entries(configs).map(async ([net, config]) => {
                 const idData = await getID(net);
-                const alchemy = new Alchemy(config);
                 const newTx = await sendTx(net, config, idData);
 
                 return {

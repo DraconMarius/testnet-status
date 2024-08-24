@@ -2,6 +2,8 @@ const path = require("path");
 require("dotenv").config;
 const express = require("express");
 const session = require("express-session");
+const cron = require('node-cron');
+const axios = require('axios');
 
 const SequalizeStore = require("connect-session-sequelize")(session.Store);
 
@@ -127,7 +129,40 @@ Object.entries(configs).forEach(([net, config]) => {
         console.log(`WebSocket connection closed for ${net} testnet`);
     });
 });
-//
+
+
+
+// Schedule API calls every 30 minutes to create new transactions
+cron.schedule('0,30 * * * *', async () => {
+    console.log('Scheduling new transactions every 30 minutes.');
+
+    try {
+        const response = await axios.post('/api/newTx', {}, {
+            baseURL: process.env.NODE_ENV === 'production'
+                ? 'https://your-heroku-app.herokuapp.com'
+                : 'http://localhost:3001'
+        });
+        console.log('New transactions response:', response.data);
+    } catch (err) {
+        console.error('Error scheduling new transactions:', err);
+    }
+});
+
+// Schedule API calls every 30 minutes to calculate average throughput
+cron.schedule('0,30 * * * *', async () => {
+    console.log('Scheduling average throughput calculation every 30 minutes.');
+
+    try {
+        const response = await axios.post('/api/avg', {}, {
+            baseURL: process.env.NODE_ENV === 'production'
+                ? 'https://your-heroku-app.herokuapp.com'
+                : 'http://localhost:3001'
+        });
+        console.log('Average throughput response:', response.data);
+    } catch (err) {
+        console.error('Error scheduling average throughput calculation:', err);
+    }
+});
 
 sequelize.sync({ force: false })
     .then(() => Net.sync())
