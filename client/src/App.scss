@@ -1,0 +1,89 @@
+@charset "utf-8";
+
+//custom Color
+//lightMode
+/* SCSS HEX */
+// $deep-sky-blue: #41C1F4ff;
+// $risd-blue: #0055FFff;
+// $white: #FBFDFEff;
+// $lavender-web: #ECE9FFff;
+// $electric-purple: #AD42F1ff;
+// $medium-slate-blue: #7559FFff;
+// $air-superiority-blue: #629CBCff;
+// $yale-blue: #223A60ff;
+// $bronze: #C5821Fff;
+// $fandango: #BA3989ff;
+
+$deep-sky-blue: hsla(197, 89%, 61%, 1);
+$risd-blue: hsla(220, 100%, 50%, 1);
+$white: hsla(200, 60%, 99%, 1);
+$lavender-web: hsla(248, 100%, 96%, 1);
+$electric-purple: hsla(277, 86%, 60%, 1);
+$medium-slate-blue: hsla(250, 100%, 67%, 1);
+$air-superiority-blue: hsla(201, 40%, 56%, 1);
+$yale-blue: hsla(217, 48%, 25%, 1);
+$bronze: rgb(255, 178, 63);
+$fandango: hsla(323, 53%, 48%, 1);
+$specialgrey: rgb(160, 160, 160);
+
+@use "bulma/sass" with ($primary: $risd-blue,
+  $link: $medium-slate-blue,
+  $warning: $bronze,
+  $info: $electric-purple,
+  $grey: $specialgrey);
+
+$tooltip-z-index: 1;
+$divider-color: $specialgrey;
+$color: $specialgrey;
+@import "../node_modules/@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css";
+@import "../node_modules/bulma-list/sass/bulma-list.scss";
+@import "../node_modules/@creativebulma/bulma-divider/dist/bulma-divider.css";
+
+#helpImg {
+  max-height: 100%;
+}
+
+$background-light: url('./assets/alchemyL.png');
+$background-dark: url('./assets/alchemyD.png');
+
+
+.hero-background {
+  // Default light background
+  background-image: $background-light;
+  background-repeat: no-repeat;
+  background-size: cover;
+  width: 100vw;
+  height: 110%;
+
+  @media (prefers-color-scheme: dark) {
+    background-image: $background-dark;
+    background-repeat: no-repeat;
+    background-size: cover;
+    width: 100vw;
+    height: 110%;
+  }
+}
+
+.helpCard {
+  width: 80vw;
+}
+
+.focusFlap {
+  font-size: clamp(10px, 1.8vw, 24px);
+}
+
+.transparent {
+  background-color: rgba(189, 190, 249, 0.41);
+
+  @media (prefers-color-scheme: dark) {
+    background-color: rgba(34, 25, 67, 0.408);
+  }
+}
+
+.highlight {
+  color: $fandango;
+
+  @media (prefers-color-scheme: dark) {
+    color: $bronze
+  }
+}
