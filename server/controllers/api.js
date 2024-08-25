@@ -3,7 +3,7 @@ const { Net, Avg, Tx } = require("../db/models");
 
 const { Alchemy, Network, Utils, Wallet } = require('alchemy-sdk');
 
-const { calcAge } = require('../util/age');
+const { calcAge, getTime } = require('../util/age');
 
 const Key = process.env.ALCHEMY_API_KEY;
 
@@ -99,7 +99,11 @@ router.post("/avg", async (req, res) => {
             console.log(`${net}'s Total time difference (seconds) across ${numBlocks} blocks: ${tDiff}`);
 
             // Calculate average transactions per second
-            const averageTx = (totalTxCount / tDiff).toFixed(4);  // Precision set to 4 decimal places
+            const averageTx = (totalTxCount / tDiff).toFixed(4);
+
+            // getting standardized createTime stamp
+            const timeslot = getTime();
+            console.log({ timeslot }, net);
 
             console.log(`${net}'s average throughput: ${averageTx} Transactions per sec`);
 
@@ -107,7 +111,8 @@ router.post("/avg", async (req, res) => {
                 net_id: id,
                 count: totalTxCount,  // Total transaction count from all queried blocks
                 avgThroughput: Number(averageTx),  // Ensure it's stored as a number
-                timestamp: new Date(latestBlockTimestamp * 1000)  // Use latest block's timestamp
+                timestamp: new Date(latestBlockTimestamp * 1000),  // Use latest block's timestamp
+                created_at: timeslot
             };
 
             const newAvgData = await Avg.create(newAvg);
@@ -157,7 +162,7 @@ router.post("/newTx", async (req, res) => {
             const maxPriorityFeePerGas = gasPrices.maxPriorityFeePerGas || Utils.parseUnits("5", "gwei");
             const maxFeePerGas = gasPrices.maxFeePerGas || Utils.parseUnits("30", "gwei");
 
-            console.log(`${net} Gas Prices:', { maxPriorityFeePerGas, maxFeePerGas }`);
+            console.log(`${net} Gas Prices:', { maxPriority: ${maxPriorityFeePerGas}, maxFee: ${maxFeePerGas} }`);
 
             const nonce = await alchemy.core.getTransactionCount(process.env.FROM_ADDRESS, "pending");
             console.log(`${nonce} <- nonce`);
@@ -178,15 +183,18 @@ router.post("/newTx", async (req, res) => {
 
             const rawTx = await wallet.signTransaction(tx);
             const sentTx = await alchemy.transact.sendTransaction(rawTx);
-            const startTime = new Date();
+            const timeslot = getTime();
 
             console.log({ sentTx });
             // Store the new transaction in the database
             const newTx = await Tx.create({
                 net_id: id,
                 tx_hash: sentTx.hash,
-                start_time: startTime,
-                status: 'pending'
+                start_time: timeslot,
+                status: 'pending',
+                created_at: timeslot,
+                maxPriorityFee_perGas: Utils.formatUnits(maxPriorityFeePerGas, 'gwei'),
+                maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei')
             });
 
             return newTx;

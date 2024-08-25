@@ -18,7 +18,7 @@ const Net = require("./db/models/net");
 const Avg = require("./db/models/avg");
 const Tx = require("./db/models/tx");
 
-const { Alchemy, Network, AlchemySubscription } = require('alchemy-sdk');
+const { Alchemy, Network, AlchemySubscription, Utils } = require('alchemy-sdk');
 const { calcAge } = require('./util/age');
 const Key = process.env.ALCHEMY_API_KEY;
 
@@ -107,7 +107,8 @@ Object.entries(configs).forEach(([net, config]) => {
                 await Tx.update({
                     end_time: endTime,
                     latency,
-                    status: 'complete'
+                    status: 'complete',
+                    gas_price: Utils.formatUnits(receipt.gasPrice, 'gwei')
                 }, {
                     where: { tx_hash: tx.transaction.hash }
                 });
