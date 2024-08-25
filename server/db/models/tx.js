@@ -33,6 +33,18 @@ Tx.init({
         type: DataTypes.STRING,
         alowNull: true,
     },
+    maxFee_perGas: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    maxPriorityFee_perGas: {
+        type: DataTypes.STRING,
+        allowNull: false,
+    },
+    gas_price: {
+        type: DataTypes.STRING,
+        allowNull: true,
+    },
     status: {
         type: DataTypes.STRING,
         allowNull: false,
