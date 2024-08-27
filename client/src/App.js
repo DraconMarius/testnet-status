@@ -18,7 +18,7 @@ function App() {
 
   return (
 
-    <SearchProvider>
+    <>
       <Router>
 
         <Routes>
@@ -29,7 +29,7 @@ function App() {
 
       </Router>
       {/* <Footer /> */}
-    </SearchProvider>
+    </>
 
   );
 }

@@ -35,9 +35,9 @@ $specialgrey: rgb(160, 160, 160);
 $tooltip-z-index: 1;
 $divider-color: $specialgrey;
 $color: $specialgrey;
-@import "../node_modules/@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css";
-@import "../node_modules/bulma-list/sass/bulma-list.scss";
-@import "../node_modules/@creativebulma/bulma-divider/dist/bulma-divider.css";
+// @import "../node_modules/@creativebulma/bulma-tooltip/dist/bulma-tooltip.min.css";
+// @import "../node_modules/bulma-list/sass/bulma-list.scss";
+// @import "../node_modules/@creativebulma/bulma-divider/dist/bulma-divider.css";
 
 #helpImg {
   max-height: 100%;
@@ -61,6 +61,12 @@ $background-dark: url('./assets/alchemyD.png');
     background-size: cover;
     width: 100vw;
     height: 110%;
+  }
+}
+
+@media screen and (max-width: 1024px) {
+  .sidebarStatic {
+    display: none;
   }
 }
 
