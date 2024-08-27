@@ -111,8 +111,7 @@ router.post("/avg", async (req, res) => {
                 net_id: id,
                 count: totalTxCount,  // Total transaction count from all queried blocks
                 avgThroughput: Number(averageTx),  // Ensure it's stored as a number
-                timestamp: new Date(latestBlockTimestamp * 1000),  // Use latest block's timestamp
-                created_at: timeslot
+                timestamp: timeslot
             };
 
             const newAvgData = await Avg.create(newAvg);
@@ -159,21 +158,21 @@ router.post("/newTx", async (req, res) => {
 
         try {
             const gasPrices = await alchemy.core.getFeeData();
-            const maxPriorityFeePerGas = gasPrices.maxPriorityFeePerGas || Utils.parseUnits("5", "gwei");
-            const maxFeePerGas = gasPrices.maxFeePerGas || Utils.parseUnits("30", "gwei");
-
-            console.log(`${net} Gas Prices:', { maxPriority: ${maxPriorityFeePerGas}, maxFee: ${maxFeePerGas} }`);
+            const maxPriorityFeePerGas = gasPrices.maxPriorityFeePerGas;
+            const maxFeePerGas = gasPrices.maxFeePerGas;
+            console.log({ gasPrices })
+            // console.log(`${net} Gas Prices:', { maxPriority: ${maxPriorityFeePerGas}, maxFee: ${maxFeePerGas} }`);
 
             const nonce = await alchemy.core.getTransactionCount(process.env.FROM_ADDRESS, "pending");
             console.log(`${nonce} <- nonce`);
 
             const valueETH = Utils.parseEther("0.00001");
-            console.log(valueETH);
+            // console.log(valueETH);
 
             const tx = {
                 to: process.env.TO_ADDRESS,
                 value: valueETH,
-                gasLimit: "80000",
+                gasLimit: "150000",
                 maxPriorityFeePerGas,
                 maxFeePerGas,
                 nonce,
@@ -194,7 +193,7 @@ router.post("/newTx", async (req, res) => {
                 status: 'pending',
                 created_at: timeslot,
                 maxPriorityFee_perGas: Utils.formatUnits(maxPriorityFeePerGas, 'gwei'),
-                maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei')
+                maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei'),
             });
 
             return newTx;
@@ -312,6 +311,48 @@ router.put("/forceUpdate", async (req, res) => {
 
             }))
         const combinedResults = results.reduce((net, result) => ({ ...net, ...result }), {});
+        res.json(combinedResults);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
+router.get("/getDB", async (req, res) => {
+    console.log('==================getting DB data==================');
+
+    try {
+        const results = await Promise.all(
+            Object.entries(configs).map(async ([net, _config]) => {
+                const idData = await getID(net);
+
+                // Query for Avg and Tx data for the given network
+                const avgData = await Avg.findAll({
+                    where: { net_id: idData },
+                    order: [['timestamp', 'ASC']]
+                });
+
+                const txData = await Tx.findAll({
+                    where: { net_id: idData },
+                    order: [['start_time', 'ASC']]
+                });
+
+                const combinedData = avgData.map(avg => {
+                    const matchingTx = txData.find(tx => tx.start_time.getTime() === avg.timestamp.getTime());
+                    return {
+                        time: avg.created_at,
+                        avg: avg || null,
+                        tx: matchingTx || null
+                    };
+                });
+
+                return { [net]: combinedData };
+            })
+        );
+
+        // Combine the results into a single object
+        const combinedResults = results.reduce((acc, result) => ({ ...acc, ...result }), {});
+
         res.json(combinedResults);
     } catch (err) {
         console.error(err);
