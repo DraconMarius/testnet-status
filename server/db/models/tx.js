@@ -51,7 +51,6 @@ Tx.init({
     }
 }, {
     sequelize,
-    timestamps: true,
     underscored: true,
     freezeTableName: true,
     modelName: "tx",
