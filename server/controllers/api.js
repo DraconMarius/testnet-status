@@ -182,10 +182,10 @@ router.post("/newTx", async (req, res) => {
             };
 
             const rawTx = await wallet.signTransaction(tx);
-            const sentTx = await alchemy.transact.sendTransaction(rawTx);
             const startTime = new Date();
+            const sentTx = await alchemy.transact.sendTransaction(rawTx);
 
-            console.log({ sentTx });
+            // console.log({ sentTx });
             // Store the new transaction in the database
             const newTx = await Tx.create({
                 net_id: id,
