@@ -93,3 +93,65 @@ $background-dark: url('./assets/alchemyD.png');
     color: $bronze
   }
 }
+
+.status-container {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: flex-end;
+  gap: 10px;
+  position: relative;
+}
+
+.status-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+}
+
+.status-item {
+  width: 10px;
+  height: 100px;
+  background-color: #00d1b2;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  z-index: 1;
+}
+
+.status-item:hover {
+  background-color: #3273dc;
+}
+
+.date-marker {
+  width: 100px;
+  text-align: center;
+  color: $air-superiority-blue;
+  font-size: 12px;
+  margin-bottom: 10px;
+  position: absolute;
+  bottom: -30px;
+}
+
+.status-pane {
+  position: absolute;
+  top: -200px;
+  left: -125px;
+  width: 350px;
+  height: 200px;
+  background-color: rgba(189, 190, 249, 0.41);
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 2;
+}
+
+.status-info {
+  color: black;
+  text-align: center;
+}
