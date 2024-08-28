@@ -140,7 +140,7 @@ cron.schedule('0,30 * * * *', async () => {
     try {
         const response = await axios.post('/api/newTx', {}, {
             baseURL: process.env.NODE_ENV === 'production'
-                ? 'https://your-heroku-app.herokuapp.com'
+                ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
                 : 'http://localhost:3001'
         });
         console.log('New transactions response:', response.data);
@@ -156,7 +156,7 @@ cron.schedule('0,30 * * * *', async () => {
     try {
         const response = await axios.post('/api/avg', {}, {
             baseURL: process.env.NODE_ENV === 'production'
-                ? 'https://your-heroku-app.herokuapp.com'
+                ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
                 : 'http://localhost:3001'
         });
         console.log('Average throughput response:', response.data);
