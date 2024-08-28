@@ -8,9 +8,9 @@ import optimismIcon from '../assets/optimism-logo.png'
 import polygonIcon from '../assets/polygon-logo.png'
 
 
-function Sidebar({ res }) {
+function Sidebar({ res, setSelectedNetwork }) {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [selectedNetwork, setSelectedNetwork] = useState(null);
+    const [selectedNetwork, setLocalSelectedNetwork] = useState(null);
 
     const handleMobile = () => {
         // document.getElementById('sidebar').classList.toggle('is-active');
@@ -18,6 +18,7 @@ function Sidebar({ res }) {
     };
 
     const handleNetworkSelect = (network) => {
+        setLocalSelectedNetwork(network);
         setSelectedNetwork(network);
     };
 
@@ -142,7 +143,7 @@ function Sidebar({ res }) {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        backgroundColor: 'rgba(0, 0, 0, 0.5)',
+                        backgroundColor: 'rgba(0, 0, 0, 0.8)',
                         zIndex: 10,
                     }}
                 />
