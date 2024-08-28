@@ -46,9 +46,9 @@ const configs = {
     }
 };
 
-// if (process.env.NODE_ENV === 'production') {
-//     app.use(express.static(path.join(__dirname, '../client/build')));
-// }
+if (process.env.NODE_ENV === 'production') {
+    app.use(express.static(path.join(__dirname, '../client/build')));
+}
 
 const sess = {
     secret: process.env.SECRET,
@@ -67,9 +67,9 @@ app.use(express.static(path.join(__dirname, "public")));
 
 app.use(routes)
 
-// app.get('/*', (req, res) => {
-//     res.sendFile(path.join(__dirname, '../client/build/index.html'));
-// })
+app.get('/*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+})
 
 const webSockets = {};
 console.log(process.env.FROM_ADDRESS)

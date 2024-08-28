@@ -1,13 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import Sidebar from './Sidebar';
-import loadingIcon from '../assets/loading.gif'
+import loadingIcon from '../assets/loading.gif';
+
+import { getDB } from '../util/api'
 
 
 function Disp() {
     const [loading, setLoading] = useState();
-    // useEffect(() => {
+    const [db, setDB] = useState();
 
-    // }, []);
+    const getHistory = async () => {
+        const res = await getDB();
+
+        return res
+    }
+
+    useEffect(() => {
+        setLoading(true)
+        const fetchData = async () => {
+            try {
+                const res = await getDB();
+                console.log('Fetched data:', res);
+                setDB(res); 
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            } finally {
+                setLoading(false);  
+            }
+        };
+        fetchData()
+    
+    }, []);
 
     // const res = { Eth: [], Polygon: [], Arbitrum: [], Base: [] };
 
@@ -33,7 +56,7 @@ function Disp() {
                         </div>
                         <div className="container columns has-text-centered">
                             <div className="column is-2">
-                                <Sidebar />
+                                <Sidebar res={db} />
                             </div>
                         </div>
                     </div>
