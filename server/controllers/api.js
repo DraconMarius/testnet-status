@@ -162,6 +162,7 @@ router.post("/newTx", async (req, res) => {
             const maxFeePerGas = gasPrices.maxFeePerGas;
             console.log({ gasPrices })
             // console.log(`${net} Gas Prices:', { maxPriority: ${maxPriorityFeePerGas}, maxFee: ${maxFeePerGas} }`);
+            const timeslot = getTime();
 
             const nonce = await alchemy.core.getTransactionCount(process.env.FROM_ADDRESS, "pending");
             console.log(`${nonce} <- nonce`);
@@ -182,16 +183,16 @@ router.post("/newTx", async (req, res) => {
 
             const rawTx = await wallet.signTransaction(tx);
             const sentTx = await alchemy.transact.sendTransaction(rawTx);
-            const timeslot = getTime();
+            const startTime = new Date();
 
             console.log({ sentTx });
             // Store the new transaction in the database
             const newTx = await Tx.create({
                 net_id: id,
                 tx_hash: sentTx.hash,
-                start_time: timeslot,
+                start_time: startTime,
                 status: 'pending',
-                created_at: timeslot,
+                timestamp: timeslot,
                 maxPriorityFee_perGas: Utils.formatUnits(maxPriorityFeePerGas, 'gwei'),
                 maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei'),
             });
@@ -331,18 +332,20 @@ router.get("/getDB", async (req, res) => {
                     where: { net_id: idData },
                     order: [['timestamp', 'ASC']]
                 });
+                console.log({ avgData })
 
                 const txData = await Tx.findAll({
                     where: { net_id: idData },
-                    order: [['start_time', 'ASC']]
+                    order: [['timestamp', 'ASC']]
                 });
+                console.log({ txData })
 
                 const combinedData = avgData.map(avg => {
-                    const matchingTx = txData.find(tx => tx.start_time.getTime() === avg.timestamp.getTime());
+                    const matchingTx = txData.find(tx => tx.timestamp.getTime() === avg.timestamp.getTime());
                     return {
-                        time: avg.created_at,
-                        avg: avg || null,
-                        tx: matchingTx || null
+                        time: avg.timestamp,
+                        avg: avg,
+                        tx: matchingTx
                     };
                 });
 
@@ -352,6 +355,7 @@ router.get("/getDB", async (req, res) => {
 
         // Combine the results into a single object
         const combinedResults = results.reduce((acc, result) => ({ ...acc, ...result }), {});
+        console.log(combinedResults);
 
         res.json(combinedResults);
     } catch (err) {

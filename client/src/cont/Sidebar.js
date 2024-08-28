@@ -153,7 +153,7 @@ function Sidebar({ res }) {
 
 const getNetworkIcon = (networkName) => {
     switch (networkName) {
-        case 'Ethereum':
+        case 'Eth':
             return ethereumIcon;
         case 'Arbitrum':
             return arbitrumIcon;
@@ -161,6 +161,8 @@ const getNetworkIcon = (networkName) => {
             return optimismIcon;
         case 'Polygon':
             return polygonIcon;
+        case 'Base':
+            return ethereumIcon;
         default:
             return '';
     }

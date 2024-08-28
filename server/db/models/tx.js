@@ -48,6 +48,10 @@ Tx.init({
     status: {
         type: DataTypes.STRING,
         allowNull: false,
+    },
+    timestamp: {
+        type: DataTypes.DATE,
+        allowNull: false
     }
 }, {
     sequelize,
