@@ -11,6 +11,7 @@ function Disp() {
     const wsUri = process.env.REACT_APP_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:3001`;
     const wsRef = useRef(null);
 
+
     const fetchData = async () => {
         try {
             const res = await getDB();
@@ -24,17 +25,14 @@ function Disp() {
     };
 
     const connectWebSocket = () => {
-        if (wsRef.current) return;
 
-        const wss = new WebSocket(wsUri);
+        wsRef.current = new WebSocket(wsUri);
 
-        wsRef.current = wss;
-
-        wss.onopen = () => {
+        wsRef.current.onopen = () => {
             console.log('Connected to WebSocket server');
         };
 
-        wss.onmessage = (message) => {
+        wsRef.current.onmessage = (message) => {
             const data = JSON.parse(message.data);
             console.log('WebSocket message received:', data);
 
@@ -46,46 +44,25 @@ function Disp() {
         };
 
 
-        wss.onclose = () => {
+        wsRef.current.onclose = () => {
             console.log('WebSocket connection closed');
+            setTimeout(connectWebSocket, 1000); // Reconnect after 1 second
         };
 
-        wss.onerror = (error) => {
+        wsRef.current.onerror = (error) => {
             console.error('WebSocket error:', error);
+            wsRef.current.close();
         };
     };
 
-    const disconnectWebSocket = () => {
-        if (wsRef.current) {
-            // Close WebSocket connection
-            wsRef.current.close();
-            // Reset WebSocket reference
-            wsRef.current = null;
-        }
-    };
 
     useEffect(() => {
         fetchData();
 
-        const handleFocus = () => {
-            console.log('Window in focus, connecting WebSocket');
-            connectWebSocket();
-        };
-
-        const handleBlur = () => {
-            console.log('Window out of focus, closing WebSocket');
-            disconnectWebSocket();
-        };
-
-        window.addEventListener('focus', handleFocus);
-        window.addEventListener('blur', handleBlur);
-
         connectWebSocket();
 
         return () => {
-            window.removeEventListener('focus', handleFocus);
-            window.removeEventListener('blur', handleBlur);
-            disconnectWebSocket();
+            if (wsRef.current) wsRef.current.close();
         };
     }, []);
 
