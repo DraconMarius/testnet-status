@@ -72,7 +72,7 @@ router.post("/avg", async (req, res) => {
             let totalTxCount = 0;
             let earliestBlockTimestamp, latestBlockTimestamp;
 
-            console.log(`${net}: Querying the last ${numBlocks} blocks`);
+            // console.log(`${net}: Querying the last ${numBlocks} blocks`);
 
             // Loop through the last `numBlocks` blocks
             for (let i = 0; i < numBlocks; i++) {
@@ -96,16 +96,16 @@ router.post("/avg", async (req, res) => {
 
             // Calculate the total time difference between the earliest and latest blocks
             const tDiff = latestBlockTimestamp - earliestBlockTimestamp;
-            console.log(`${net}'s Total time difference (seconds) across ${numBlocks} blocks: ${tDiff}`);
+            // console.log(`${net}'s Total time difference (seconds) across ${numBlocks} blocks: ${tDiff}`);
 
             // Calculate average transactions per second
             const averageTx = (totalTxCount / tDiff).toFixed(4);
 
             // getting standardized createTime stamp
             const timeslot = getTime();
-            console.log({ timeslot }, net);
+            // console.log({ timeslot }, net);
 
-            console.log(`${net}'s average throughput: ${averageTx} Transactions per sec`);
+            // console.log(`${net}'s average throughput: ${averageTx} Transactions per sec`);
 
             const newAvg = {
                 net_id: id,
@@ -261,7 +261,7 @@ router.put("/forceUpdate", async (req, res) => {
             Object.entries(configs).map(async ([net, config]) => {
                 const idData = await getID(net);
                 const pendingTx = await checkIfPending(net);
-                console.log(pendingTx)
+                // console.log(pendingTx)
                 const alchemy = new Alchemy(config);
                 if (!pendingTx.txHash || pendingTx.pending === "complete") {
                     return { [net]: !pendingTx.txHash ? "no previous hash" : `previous hash already complete: ${pendingTx.txHash}` }
@@ -283,10 +283,10 @@ router.put("/forceUpdate", async (req, res) => {
                     })
                     const startTime = findTxStart.get({ plain: true });
 
-                    console.log(endTime, "endTime")
-                    console.log(startTime.start_time, "startTime")
+                    // console.log(endTime, "endTime")
+                    // console.log(startTime.start_time, "startTime")
                     const latency = calcAge(startTime.start_time, endTime);
-                    console.log(latency)
+                    // console.log(latency)
                     // Update the transaction status and latency
                     const updateDB = await Tx.update({
                         end_time: endTime,
@@ -332,13 +332,13 @@ router.get("/getDB", async (req, res) => {
                     where: { net_id: idData },
                     order: [['timestamp', 'ASC']]
                 });
-                console.log({ avgData })
+                // console.log({ avgData })
 
                 const txData = await Tx.findAll({
                     where: { net_id: idData },
                     order: [['timestamp', 'ASC']]
                 });
-                console.log({ txData })
+                // console.log({ txData })
 
                 const combinedData = avgData.map(avg => {
                     const matchingTx = txData.find(tx => tx.timestamp.getTime() === avg.timestamp.getTime());

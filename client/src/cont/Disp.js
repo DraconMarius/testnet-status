@@ -8,6 +8,8 @@ import { motion } from 'framer-motion';
 function Disp() {
     const [loading, setLoading] = useState(true);
     const [db, setDB] = useState(null);
+    const wsUri = process.env.REACT_APP_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:3001`;
+    const wss = new WebSocket(wsUri);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -22,6 +24,30 @@ function Disp() {
             }
         };
         fetchData();
+
+        wss.onopen = () => {
+            console.log('Connected to WebSocket server');
+        };
+
+        wss.onmessage = (message) => {
+            const data = JSON.parse(message.data);
+            console.log('WebSocket message received:', data);
+
+            // If the message indicates an update, refresh the data
+            if (data.message === 'update') {
+                console.log('Data update received from WebSocket');
+                fetchData();  // Refresh the data on the frontend
+            }
+        };
+
+        wss.onclose = () => {
+            console.log('WebSocket connection closed');
+        };
+
+        return () => {
+            console.log('Closing WebSocket connection');
+            wss.close();
+        };
     }, []);
 
     return (
@@ -29,13 +55,13 @@ function Disp() {
             {loading || !db ? (
                 <motion.div className="modal is-active" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                     <div className="modal-background">
-                        <div className="modal-content is-flex is-justify-content-center is-align-items-center">
+                        <div className=" is-flex is-justify-content-center is-align-items-center">
                             <motion.div
-                                className="container is-flex is-justify-content-center"
+                                className="modal-content is-flex is-justify-content-center"
                                 initial={{ scale: 0.8 }}
                                 animate={{ scale: 1 }}
                             >
-                                <div className="image is-1by1 is-48x48 is-align-self-center">
+                                <div className="image is-48x48 is-align-self-center">
                                     <img src={loadingIcon} alt="loading gif" />
                                 </div>
                             </motion.div>
@@ -57,19 +83,19 @@ function Disp() {
                     </div>
                     <div className="hero-body is-justify-content-center">
                         <div className="container has-text-centered">
-                            <div className="container is-justify-self-center">
-                                {Object.keys(db).map((networkKey) => (
-                                    <div className="container is-justify-content-center" key={networkKey}>
-                                        <div className="block">
-                                            <h2 className="title is-6 has-text-left">{networkKey}</h2>
-                                        </div>
-                                        <StatusBar
-                                            res={db}
-                                            selectedNetwork={networkKey}
-                                        />
+
+                            {Object.keys(db).map((networkKey) => (
+                                <div className="container is-justify-content-center" key={networkKey}>
+                                    <div className="block">
+                                        <h2 className="title is-6 has-text-left">{networkKey}</h2>
                                     </div>
-                                ))}
-                            </div>
+                                    <StatusBar
+                                        res={db}
+                                        selectedNetwork={networkKey}
+                                    />
+                                </div>
+                            ))}
+
                         </div>
                     </div>
 

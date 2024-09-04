@@ -1,9 +1,10 @@
 const path = require("path");
-require("dotenv").config;
+require("dotenv").config();
 const express = require("express");
 const session = require("express-session");
 const cron = require('node-cron');
 const axios = require('axios');
+const WebSocket = require('ws');
 
 const SequalizeStore = require("connect-session-sequelize")(session.Store);
 
@@ -71,66 +72,100 @@ app.get('/*', (req, res) => {
     res.sendFile(path.join(__dirname, '../client/build/index.html'));
 })
 
-const webSockets = {};
-console.log(process.env.FROM_ADDRESS)
+let wss
 
-Object.entries(configs).forEach(([net, config]) => {
-    const alchemy = new Alchemy(config);
-    webSockets[net] = alchemy.ws;
-
-    alchemy.ws.on('open', () => {
-        console.log(`WebSocket connection opened for ${net} testnet`);
-    });
-
-    alchemy.ws.on({
-        method: AlchemySubscription.MINED_TRANSACTIONS,
-        addresses: [
-            {
-                from: process.env.FROM_ADDRESS,
-                to: process.env.TO_ADDRESS,
-            }]
-    }, async (tx) => {
-        // console.log({ tx });
-        try {
-            // Look up the transaction in the database by its hash
-            const foundTx = await Tx.findOne({ where: { tx_hash: tx.transaction.hash } });
-
-            if (foundTx) {
-                // The transaction is found and confirmed
-                const receipt = await alchemy.transact.getTransaction(tx.transaction.hash);
-                const block = await alchemy.core.getBlock(receipt.blockNumber);
-                const endTime = new Date(block.timestamp * 1000);
-
-                const latency = calcAge(foundTx.start_time, endTime);
-
-                // Update the transaction in the database
-                await Tx.update({
-                    end_time: endTime,
-                    latency,
-                    status: 'complete',
-                    gas_price: Utils.formatUnits(receipt.gasPrice, 'gwei')
-                }, {
-                    where: { tx_hash: tx.transaction.hash }
-                });
-
-                console.log(`Transaction ${tx.transaction.hash} confirmed and updated in the database for ${net}.`);
-            } else {
-                console.log(`Transaction ${tx.transaction.hash} not found in the database for ${net}.`);
+const notifyClients = (data) => {
+    console.log('Notifying clients:', data);
+    if (wss) {
+        wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify(data));
             }
-        } catch (err) {
-            console.error(`Error processing mined transaction on ${net}:`, err);
-        }
-    });
+        });
+    }
+};
 
-    alchemy.ws.on('error', (error) => {
-        console.error(`WebSocket error on ${net} testnet:`, error);
-    });
+sequelize.sync({ force: false })
+    .then(() => Net.sync())
+    .then(() => Avg.sync())
+    .then(() => Tx.sync())
+    .then(() => {
+        const server = app.listen(PORT, () => {
+            console.log(`now listening at http://localhost:${PORT}/`);
+        });
+        wss = new WebSocket.Server({ server });
 
-    alchemy.ws.on('close', () => {
-        console.log(`WebSocket connection closed for ${net} testnet`);
-    });
-});
+        wss.on('connection', (ws) => {
+            console.log('Frontend connected');
 
+            ws.on('close', () => {
+                console.log('Frontend disconnected');
+            });
+        });
+
+
+        const webSockets = {};
+        // console.log(process.env.FROM_ADDRESS)
+
+        Object.entries(configs).forEach(([net, config]) => {
+            const alchemy = new Alchemy(config);
+            webSockets[net] = alchemy.ws;
+
+            alchemy.ws.on('open', () => {
+                console.log(`Alchemy WebSocket connection opened for ${net} testnet`);
+            });
+
+            alchemy.ws.on({
+                method: AlchemySubscription.MINED_TRANSACTIONS,
+                addresses: [
+                    {
+                        from: process.env.FROM_ADDRESS,
+                        to: process.env.TO_ADDRESS,
+                    }]
+            }, async (tx) => {
+                // console.log({ tx });
+                try {
+                    // Look up the transaction in the database by its hash
+                    const foundTx = await Tx.findOne({ where: { tx_hash: tx.transaction.hash } });
+
+                    if (foundTx) {
+                        // The transaction is found and confirmed
+                        const receipt = await alchemy.transact.getTransaction(tx.transaction.hash);
+                        const block = await alchemy.core.getBlock(receipt.blockNumber);
+                        const endTime = new Date(block.timestamp * 1000);
+
+                        const latency = calcAge(foundTx.start_time, endTime);
+
+                        // Update the transaction in the database
+                        await Tx.update({
+                            end_time: endTime,
+                            latency,
+                            status: 'complete',
+                            gas_price: Utils.formatUnits(receipt.gasPrice, 'gwei')
+                        }, {
+                            where: { tx_hash: tx.transaction.hash }
+                        });
+
+                        console.log(`Transaction ${tx.transaction.hash} confirmed and updated in the database for ${net}.`);
+                        //send signal to front to refresh
+                        notifyClients({ message: 'update' });
+                    } else {
+                        console.log(`Transaction ${tx.transaction.hash} not found in the database for ${net}.`);
+                    }
+                } catch (err) {
+                    console.error(`Error processing mined transaction on ${net}:`, err);
+                }
+            });
+
+            alchemy.ws.on('error', (error) => {
+                console.error(`Alchemy WebSocket error on ${net} testnet:`, error);
+            });
+
+            alchemy.ws.on('close', () => {
+                console.log(`Alchemy WebSocket connection closed for ${net} testnet`);
+            });
+        });
+    });
 
 
 // Schedule API calls every 30 minutes to create new transactions
@@ -144,6 +179,7 @@ cron.schedule('0,30 * * * *', async () => {
                 : 'http://localhost:3001'
         });
         console.log('New transactions response:', response.data);
+        notifyClients({ message: 'update' });
     } catch (err) {
         console.error('Error scheduling new transactions:', err);
     }
@@ -164,13 +200,3 @@ cron.schedule('0,30 * * * *', async () => {
         console.error('Error scheduling average throughput calculation:', err);
     }
 });
-
-sequelize.sync({ force: false })
-    .then(() => Net.sync())
-    .then(() => Avg.sync())
-    .then(() => Tx.sync())
-    .then(() => {
-        app.listen(PORT, () => {
-            console.log(`now listening at http://localhost:${PORT}/`);
-        });
-    });
