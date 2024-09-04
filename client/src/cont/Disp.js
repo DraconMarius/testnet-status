@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Nav from './Nav';
 import StatusBar from '../comp/StatusBar';
 import loadingIcon from '../assets/loading.gif';
-import { getDB } from '../util/api';
+import { getDB, refresh } from '../util/api';
 import { motion } from 'framer-motion';
 
 function Disp() {

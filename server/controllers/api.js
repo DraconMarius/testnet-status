@@ -364,4 +364,83 @@ router.get("/getDB", async (req, res) => {
     }
 });
 
+router.post("/refresh", async (req, res) => {
+    console.log('==================refreshing pending transactions==================');
+
+    try {
+        const results = await Promise.all(
+            Object.entries(configs).map(async ([net, config]) => {
+                const idData = await getID(net);
+
+                // Fetch all pending transactions for the current network
+                const pendingTxs = await Tx.findAll({
+                    where: {
+                        net_id: idData,
+                        status: 'pending'
+                    },
+                    order: [['createdAt', 'ASC']]
+                });
+
+                const alchemy = new Alchemy(config);
+
+                const updatedTxs = await Promise.all(pendingTxs.map(async (tx) => {
+                    try {
+                        // Check the status of the transaction on the blockchain
+                        const receipt = await alchemy.transact.getTransaction(tx.tx_hash);
+
+                        if (receipt && receipt.confirmations > 0) {
+                            // If the transaction has been confirmed, update its status in the database
+                            const block = await alchemy.core.getBlock(receipt.blockNumber);
+                            const endTime = new Date(block.timestamp * 1000);
+                            const latency = calcAge(tx.start_time, endTime);
+
+                            await Tx.update({
+                                end_time: endTime,
+                                latency,
+                                status: 'complete'
+                            }, {
+                                where: { tx_hash: tx.tx_hash }
+                            });
+
+                            console.log(`Transaction ${tx.tx_hash} confirmed and updated in the database for ${net}.`);
+
+                            return {
+                                tx_hash: tx.tx_hash,
+                                status: 'complete',
+                                updated: true
+                            };
+                        } else {
+                            console.log(`Transaction ${tx.tx_hash} pending still for ${net}.`);
+
+                            return {
+                                tx_hash: tx.tx_hash,
+                                status: 'pending',
+                                updated: false
+                            };
+                        }
+                    } catch (error) {
+                        console.error(`Error checking transaction ${tx.tx_hash} on ${net}:`, error);
+                        return {
+                            tx_hash: tx.tx_hash,
+                            status: 'pending',
+                            updated: false,
+                            error: error.message
+                        };
+                    }
+                }));
+
+                return { [net]: updatedTxs };
+            })
+        );
+
+        const combinedResults = results.reduce((acc, result) => ({ ...acc, ...result }), {});
+        console.log(combinedResults);
+
+        res.json(combinedResults);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 module.exports = router;

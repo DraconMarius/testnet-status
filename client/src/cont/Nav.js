@@ -2,12 +2,7 @@ import React, { useState, useEffect } from 'react';
 
 import logo from '../assets/alchemylogo.png';
 
-
-
-import ethereumIcon from '../assets/etherscan-logo.png'
-import arbitrumIcon from '../assets/arbitrum-logo.png'
-import optimismIcon from '../assets/optimism-logo.png'
-import polygonIcon from '../assets/polygon-logo.png'
+import { refresh } from '../util/api';
 
 
 function Nav({ setAddress }) {
@@ -16,8 +11,6 @@ function Nav({ setAddress }) {
         console.log("test")
         document.getElementById('navbar').classList.toggle('is-active');
     }
-
-
 
     return (
 
@@ -48,7 +41,9 @@ function Nav({ setAddress }) {
 
                     <div className=" navbar-item is-flex ">
 
-                       
+                        <div className="button is-warning" onClick={() => refresh()} href={"/"}>
+                            Refresh
+                        </div>
 
                         {/* <Help type={searchParams.type} /> */}
                     </div>
