@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import Sidebar from './Sidebar';
+import Nav from './Nav';
 import StatusBar from '../comp/StatusBar';
 import loadingIcon from '../assets/loading.gif';
 import { getDB } from '../util/api';
@@ -8,8 +8,6 @@ import { motion } from 'framer-motion';
 function Disp() {
     const [loading, setLoading] = useState(true);
     const [db, setDB] = useState(null);
-    const [selectedNetwork, setSelectedNetwork] = useState(null);  // This stores the selected network
-    const [focusedTimeSlot, setFocusedTimeSlot] = useState(null);  // This stores the focused time slot
 
     useEffect(() => {
         const fetchData = async () => {
@@ -51,30 +49,28 @@ function Disp() {
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
                 >
-                    <div className="hero-head">
+                    <div className="hero-head has-text-centered">
+                        <Nav />
                         <div className="container">
                             <div>Hero-head placeholder for scroll status maybe</div>
                         </div>
-                        <div className="container columns has-text-centered">
-                            <div className="column is-2">
-                                <Sidebar res={db} setSelectedNetwork={setSelectedNetwork} />
+                    </div>
+                    <div className="hero-body is-justify-content-center">
+                        <div className="container has-text-centered">
+                            <div className="container is-justify-self-center">
+                                {Object.keys(db).map((networkKey) => (
+                                    <div className="container is-justify-content-center" key={networkKey}>
+                                        <div className="block">
+                                            <h2 className="title is-6 has-text-left">{networkKey}</h2>
+                                        </div>
+                                        <StatusBar
+                                            res={db}
+                                            selectedNetwork={networkKey}
+                                        />
+                                    </div>
+                                ))}
                             </div>
                         </div>
-                    </div>
-                    <div className="hero-body">
-
-                        <div className="column is-8">
-                        </div>
-                        <div className="column is-4 is-justify-content-bottom">
-                            <StatusBar
-                                res={db}
-                                selectedNetwork={selectedNetwork}  // Pass the selected network
-                                focusedTimeSlot={focusedTimeSlot}  // Pass the focused time slot
-                                setFocusedTimeSlot={setFocusedTimeSlot}  // Function to update the focused time slot
-                            />
-                            {/* Additional content */}
-                        </div>
-
                     </div>
 
                     <div className="hero-foot">

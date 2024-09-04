@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 
-
 function StatusBar({ res, selectedNetwork }) {
     const [focusedIndex, setFocusedIndex] = useState(null);
 
@@ -9,50 +8,71 @@ function StatusBar({ res, selectedNetwork }) {
 
     const entries = res[selectedNetwork];
 
-    // Helper function to format date
     const formatDate = (dateString) => {
-        const options = { year: 'numeric', month: 'long', day: 'numeric' };
-        return new Date(dateString).toLocaleDateString(undefined, options);
+        const [year, month, day] = dateString.split('-');
+        return `${month.padStart(2, '0')}/${day.padStart(2, '0')}/${year}`;
     };
 
     return (
-        <div className="status-container">
+        <div className="status-container container">
             {entries.map((entry, index) => {
-                const currentEntryDate = new Date(entry.time).toDateString();
-                const previousEntryDate = index > 0 ? new Date(entries[index - 1].time).toDateString() : null;
+                const currentEntryDate = new Date(entry.time).toISOString().slice(0, 10);
+                const previousEntryDate = index > 0 ? new Date(entries[index - 1].time).toISOString().slice(0, 10) : null;
 
+                const parsedDate = `${new Date(entry.time).toUTCString()}`
                 return (
-                    <div key={entry.time} className="status-wrapper" style={{ position: 'relative' }}>
-                        {/* Display date marker above the first bar of each new day */}
+
+                    <div className="is-flex" key={index}>
                         {currentEntryDate !== previousEntryDate && (
                             <div className="date-marker">
-                                {formatDate(entry.time)}
+                                {formatDate(currentEntryDate)}
                             </div>
                         )}
 
+
                         <motion.div
-                            className="status-item"
+                            className={`status-item is-flex ${focusedIndex === index ? 'is-focused' : 'is-faded'}`}
                             onHoverStart={() => setFocusedIndex(index)}
                             onHoverEnd={() => setFocusedIndex(null)}
                             initial={{ scale: 1 }}
-                            animate={focusedIndex === index ? { scale: 1.2 } : { scale: 1 }} /* Lifting effect */
+                            animate={focusedIndex === index ? { scale: 1 } : { scale: 1 }}
+                            transition={{ type: 'spring', stiffness: 100, damping: 60 }}
                         >
+
                             {focusedIndex === index && (
                                 <motion.div
-                                    className="status-pane"
-                                    initial={{ opacity: 0, y: 50 }}
-                                    animate={{ opacity: 1, y: -100 }}
-                                    exit={{ opacity: 0, y: 50 }}
-                                    transition={{ type: "spring", stiffness: 200, damping: 20 }}
+                                    className="status-info"
+                                    initial={{ opacity: 0, y: 0, x: 0 }}
+                                    animate={{ opacity: 1, y: -75, x: 0, zIndex: 0 }}
+                                    transition={{ duration: 0.2 }}
                                 >
-                                    <div className="status-info">
-                                        <p>time: {entry.avg.timestamp}</p>
-                                        <p>Tx Hash: {entry.tx.tx_hash}</p>
-                                        <p>Latency: {entry.tx.latency}</p>
-                                        <p>Avg Throughput: {entry.avg.avgThroughput}</p>
-                                    </div>
+                                    <table className="table">
+                                        <tbody>
+                                            <tr>
+                                                <td><strong>Time:</strong></td>
+                                                <td>{parsedDate}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Status:</strong></td>
+                                                <td>{entry.tx?.status || 'N/A'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Tx Hash:</strong></td>
+                                                <td>{entry.tx?.tx_hash || 'N/A'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Latency:</strong></td>
+                                                <td>{entry.tx?.latency || 'N/A'}</td>
+                                            </tr>
+                                            <tr>
+                                                <td><strong>Throughput:</strong></td>
+                                                <td>{`${entry.avg?.avgThroughput} tx per sec` || 'N/A'}</td>
+                                            </tr>
+                                        </tbody>
+                                    </table>
                                 </motion.div>
                             )}
+
                         </motion.div>
                     </div>
                 );
