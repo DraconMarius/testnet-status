@@ -110,17 +110,17 @@ $background-dark: url('./assets/alchemyD.png');
   justify-content: center;
   align-items: center;
   transition: transform 0.3s ease, opacity 0.3s ease;
-  /* Prevent items from shrinking */
+
 }
 
 .status-item.is-focused {
-  z-index: 1000;
-  /* Ensure it appears above other items */
+  z-index: 1;
+
 }
 
 .status-item.is-faded {
-  opacity: 0.3;
   /* Fade out non-focused items */
+  opacity: 0.3;
 }
 
 
@@ -132,7 +132,7 @@ $background-dark: url('./assets/alchemyD.png');
   flex-direction: column;
   justify-content: center;
   align-items: flex-start;
-  z-index: 0;
+  z-index: 2;
   position: relative;
 }
 
@@ -140,7 +140,7 @@ $background-dark: url('./assets/alchemyD.png');
   transform: rotate(180deg);
   color: #333;
   font-size: 12px;
-  z-index: 100;
+  z-index: 0;
   writing-mode: vertical-rl;
   letter-spacing: 2px;
   border-left: 1px solid #ccc;
