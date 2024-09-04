@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Nav from './Nav';
 import StatusBar from '../comp/StatusBar';
 import loadingIcon from '../assets/loading.gif';
@@ -9,21 +9,26 @@ function Disp() {
     const [loading, setLoading] = useState(true);
     const [db, setDB] = useState(null);
     const wsUri = process.env.REACT_APP_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:3001`;
-    const wss = new WebSocket(wsUri);
+    const wsRef = useRef(null);
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const res = await getDB();
-                console.log('Fetched data:', res);
-                setDB(res);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchData();
+    const fetchData = async () => {
+        try {
+            const res = await getDB();
+            console.log('Fetched data:', res);
+            setDB(res);
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const connectWebSocket = () => {
+        if (wsRef.current) return;
+
+        const wss = new WebSocket(wsUri);
+
+        wsRef.current = wss;
 
         wss.onopen = () => {
             console.log('Connected to WebSocket server');
@@ -40,13 +45,47 @@ function Disp() {
             }
         };
 
+
         wss.onclose = () => {
             console.log('WebSocket connection closed');
         };
 
+        wss.onerror = (error) => {
+            console.error('WebSocket error:', error);
+        };
+    };
+
+    const disconnectWebSocket = () => {
+        if (wsRef.current) {
+            // Close WebSocket connection
+            wsRef.current.close();
+            // Reset WebSocket reference
+            wsRef.current = null;
+        }
+    };
+
+    useEffect(() => {
+        fetchData();
+
+        const handleFocus = () => {
+            console.log('Window in focus, connecting WebSocket');
+            connectWebSocket();
+        };
+
+        const handleBlur = () => {
+            console.log('Window out of focus, closing WebSocket');
+            disconnectWebSocket();
+        };
+
+        window.addEventListener('focus', handleFocus);
+        window.addEventListener('blur', handleBlur);
+
+        connectWebSocket();
+
         return () => {
-            console.log('Closing WebSocket connection');
-            wss.close();
+            window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('blur', handleBlur);
+            disconnectWebSocket();
         };
     }, []);
 
