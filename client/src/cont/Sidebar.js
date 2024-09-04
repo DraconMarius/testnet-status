@@ -61,29 +61,7 @@ function Sidebar({ res, setSelectedNetwork }) {
                             <a href="/">Home</a>
                         </li>
                     </ul>
-                    {/* Display networks as tabs when data is available */}
-                    {res && Object.keys(res).length > 0 && (
-                        <>
-                            <p className="menu-label has-text-light">Networks</p>
-                            <ul className="menu-list">
-                                {Object.keys(res).map((networkKey) => (
-                                    <li key={networkKey}>
-                                        <a
-                                            onClick={() => handleNetworkSelect(networkKey)}
-                                            className={selectedNetwork === networkKey ? 'is-active' : ''}
-                                        >
-                                            <img
-                                                src={getNetworkIcon(networkKey)}
-                                                alt={`${networkKey} logo`}
-                                                style={{ marginRight: '10px', width: '20px' }}
-                                            />
-                                            {networkKey} ({res[networkKey].length} data points)
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    )}
+                    
                 </aside>
             </div>
 
@@ -104,32 +82,9 @@ function Sidebar({ res, setSelectedNetwork }) {
                 <aside className="menu">
                     <ul className="menu-list">
                         <li>
-                            <a href="/">Home</a>
+                            <a href="/"></a>
                         </li>
                     </ul>
-                    {/* Display networks as tabs when data is available */}
-                    {res && Object.keys(res).length > 0 && (
-                        <>
-                            <p className="menu-label has-text-light">Networks</p>
-                            <ul className="menu-list">
-                                {Object.keys(res).map((networkKey) => (
-                                    <li key={networkKey}>
-                                        <a
-                                            onClick={() => handleNetworkSelect(networkKey)}
-                                            className={selectedNetwork === networkKey ? 'is-active' : ''}
-                                        >
-                                            <img
-                                                src={getNetworkIcon(networkKey)}
-                                                alt={`${networkKey} logo`}
-                                                style={{ marginRight: '10px', width: '20px' }}
-                                            />
-                                            {networkKey} ({res[networkKey].length} data points)
-                                        </a>
-                                    </li>
-                                ))}
-                            </ul>
-                        </>
-                    )}
                 </aside>
             </div>
 

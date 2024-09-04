@@ -64,7 +64,7 @@ $background-dark: url('./assets/alchemyD.png');
   }
 }
 
-@media screen and (max-width: 1024px) {
+@media screen and (max-width: 1143px) {
   .sidebarStatic {
     display: none;
   }
@@ -96,62 +96,56 @@ $background-dark: url('./assets/alchemyD.png');
 
 .status-container {
   display: flex;
-  flex-direction: row;
+  scroll-behavior: smooth;
+  gap: 8px;
   justify-content: center;
-  align-items: flex-end;
-  gap: 10px;
-  position: relative;
-}
-
-.status-wrapper {
-  display: flex;
-  flex-direction: column;
   align-items: center;
-  position: relative;
 }
 
 .status-item {
-  width: 10px;
+  width: 8px;
   height: 100px;
   background-color: #00d1b2;
-  border-radius: 5px;
-  cursor: pointer;
-  transition: background-color 0.3s ease;
-  z-index: 1;
+  border-radius: 3px;
+  justify-content: center;
+  align-items: center;
+  transition: transform 0.3s ease, opacity 0.3s ease;
+  /* Prevent items from shrinking */
 }
 
-.status-item:hover {
-  background-color: #3273dc;
+.status-item.is-focused {
+  z-index: 1000;
+  /* Ensure it appears above other items */
 }
 
-.date-marker {
-  width: 100px;
+.status-item.is-faded {
+  opacity: 0.3;
+  /* Fade out non-focused items */
+}
+
+
+.status-info {
+  color: #fff;
   text-align: center;
-  color: $air-superiority-blue;
   font-size: 12px;
-  margin-bottom: 10px;
-  position: absolute;
-  bottom: -30px;
-}
-
-.status-pane {
-  position: absolute;
-  top: -200px;
-  left: -125px;
-  width: 350px;
-  height: 200px;
-  background-color: rgba(189, 190, 249, 0.41);
-  border-radius: 8px;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: center;
-  align-items: center;
-  z-index: 2;
+  align-items: flex-start;
+  z-index: 0;
+  position: relative;
 }
 
-.status-info {
-  color: black;
-  text-align: center;
+.date-marker {
+  transform: rotate(180deg);
+  color: #333;
+  font-size: 12px;
+  z-index: 100;
+  writing-mode: vertical-rl;
+  letter-spacing: 2px;
+  border-left: 1px solid #ccc;
+
+  @media (prefers-color-scheme: dark) {
+    color: $lavender-web;
+  }
 }
