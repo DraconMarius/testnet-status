@@ -44,7 +44,7 @@ function StatusBar({ res, selectedNetwork }) {
                         )}
 
                         <motion.div
-                            className={`status-item is-flex ${focusedIndex === index ? 'is-focused' : 'is-faded'}`}
+                            className={`status-item is-flex ${focusedIndex === index ? 'is-focused' : 'is-faded'} ${entry.tx?.status === 'pending' ? 'has-background-warning' : !entry.tx ? 'has-background-danger' : 'has-backround-success'}`}
                             onHoverStart={() => setFocusedIndex(index)}
                             onHoverEnd={() => setFocusedIndex(null)}
                             initial={{ scale: 1 }}
