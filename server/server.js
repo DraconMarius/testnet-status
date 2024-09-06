@@ -168,35 +168,35 @@ sequelize.sync({ force: false })
     });
 
 
-// Schedule API calls every 30 minutes to create new transactions
-cron.schedule('0,30 * * * *', async () => {
-    console.log('Scheduling new transactions every 30 minutes.');
+// // Schedule API calls every 30 minutes to create new transactions
+// cron.schedule('0,30 * * * *', async () => {
+//     console.log('Scheduling new transactions every 30 minutes.');
 
-    try {
-        const response = await axios.post('/api/newTx', {}, {
-            baseURL: process.env.NODE_ENV === 'production'
-                ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
-                : 'http://localhost:3001'
-        });
-        console.log('New transactions response:', response.data);
-        notifyClients({ message: 'update' });
-    } catch (err) {
-        console.error('Error scheduling new transactions:', err);
-    }
-});
+//     try {
+//         const response = await axios.post('/api/newTx', {}, {
+//             baseURL: process.env.NODE_ENV === 'production'
+//                 ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
+//                 : 'http://localhost:3001'
+//         });
+//         console.log('New transactions response:', response.data);
+//         notifyClients({ message: 'update' });
+//     } catch (err) {
+//         console.error('Error scheduling new transactions:', err);
+//     }
+// });
 
-// Schedule API calls every 30 minutes to calculate average throughput
-cron.schedule('0,30 * * * *', async () => {
-    console.log('Scheduling average throughput calculation every 30 minutes.');
+// // Schedule API calls every 30 minutes to calculate average throughput
+// cron.schedule('0,30 * * * *', async () => {
+//     console.log('Scheduling average throughput calculation every 30 minutes.');
 
-    try {
-        const response = await axios.post('/api/avg', {}, {
-            baseURL: process.env.NODE_ENV === 'production'
-                ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
-                : 'http://localhost:3001'
-        });
-        console.log('Average throughput response:', response.data);
-    } catch (err) {
-        console.error('Error scheduling average throughput calculation:', err);
-    }
-});
+//     try {
+//         const response = await axios.post('/api/avg', {}, {
+//             baseURL: process.env.NODE_ENV === 'production'
+//                 ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
+//                 : 'http://localhost:3001'
+//         });
+//         console.log('Average throughput response:', response.data);
+//     } catch (err) {
+//         console.error('Error scheduling average throughput calculation:', err);
+//     }
+// });

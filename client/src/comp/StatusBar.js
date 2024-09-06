@@ -1,8 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 function StatusBar({ res, selectedNetwork }) {
     const [focusedIndex, setFocusedIndex] = useState(null);
+    const [scrollPos, setScrollPos] = useState(0); // Track scroll position
+    const containerRef = useRef(null);
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (containerRef.current) {
+                setScrollPos(containerRef.current.scrollLeft);
+            }
+        };
+
+        const container = containerRef.current;
+        container.addEventListener('scroll', handleScroll);
+
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, []);
 
     if (!selectedNetwork || !res || !res[selectedNetwork]) return null;
 
@@ -14,14 +29,13 @@ function StatusBar({ res, selectedNetwork }) {
     };
 
     return (
-        <div className="status-container container">
+        <div className="status-container section" ref={containerRef} style={{ position: 'relative' }}>
             {entries.map((entry, index) => {
                 const currentEntryDate = new Date(entry.time).toISOString().slice(0, 10);
                 const previousEntryDate = index > 0 ? new Date(entries[index - 1].time).toISOString().slice(0, 10) : null;
 
-                const parsedDate = `${new Date(entry.time).toUTCString()}`
+                const parsedDate = `${new Date(entry.time).toUTCString()}`;
                 return (
-
                     <div className="is-flex" key={index}>
                         {currentEntryDate !== previousEntryDate && (
                             <div className="date-marker">
@@ -29,51 +43,63 @@ function StatusBar({ res, selectedNetwork }) {
                             </div>
                         )}
 
-
                         <motion.div
                             className={`status-item is-flex ${focusedIndex === index ? 'is-focused' : 'is-faded'}`}
                             onHoverStart={() => setFocusedIndex(index)}
                             onHoverEnd={() => setFocusedIndex(null)}
                             initial={{ scale: 1 }}
-                            animate={focusedIndex === index ? { scale: 1 } : { scale: 1 }}
+                            animate={focusedIndex === index ? { scale: 1.3 } : { scale: 1 }}
                             transition={{ type: 'spring', stiffness: 100, damping: 60 }}
-                        >
+                            style={{
+                                position: 'relative',
+                                transformOrigin: 'center',
+                            }}
+                        />
 
-                            {focusedIndex === index && (
-                                <motion.div
-                                    className="status-info"
-                                    initial={{ opacity: 0, y: 0, x: 0 }}
-                                    animate={{ opacity: 1, y: -75, x: 0, zIndex: 0 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <table className="table">
-                                        <tbody>
-                                            <tr>
-                                                <td><strong>Time:</strong></td>
-                                                <td>{parsedDate}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Status:</strong></td>
-                                                <td>{entry.tx?.status || 'N/A'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Tx Hash:</strong></td>
-                                                <td>{entry.tx?.tx_hash || 'N/A'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Latency:</strong></td>
-                                                <td>{entry.tx?.latency || 'N/A'}</td>
-                                            </tr>
-                                            <tr>
-                                                <td><strong>Throughput:</strong></td>
-                                                <td>{`${entry.avg?.avgThroughput} tx per sec` || 'N/A'}</td>
-                                            </tr>
-                                        </tbody>
-                                    </table>
-                                </motion.div>
-                            )}
-
-                        </motion.div>
+                        {/* Pop-up content positioned in the center of the visible container */}
+                        {focusedIndex === index && (
+                            <motion.div
+                                className="status-info table-container"
+                                initial={{ opacity: 0, y: -150 }}
+                                animate={{ opacity: 1, y: -100 }}
+                                transition={{ duration: 0.8 }}
+                                style={{
+                                    position: 'absolute',
+                                    left: `${scrollPos + containerRef.current.clientWidth / 3.6}px`, // Center it within the container
+                                    transform: 'translateX(-50%)', // Keep it centered based on scroll position
+                                    zIndex: 2,
+                                }}
+                            >
+                                <table className="table">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Time:</strong></td>
+                                            <td>{parsedDate}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Status:</strong></td>
+                                            <td>
+                                                <div className={`tag ${(entry.tx?.status === "complete") ? 'is-success' : 'is-warning'}`}>
+                                                    {entry.tx?.status || 'N/A'}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Tx Hash:</strong></td>
+                                            <td>{entry.tx?.tx_hash || 'N/A'}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Latency:</strong></td>
+                                            <td>{entry.tx?.latency || 'N/A'}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Throughput:</strong></td>
+                                            <td>{`${entry.avg?.avgThroughput} tx per sec` || 'N/A'}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </motion.div>
+                        )}
                     </div>
                 );
             })}

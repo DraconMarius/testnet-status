@@ -330,13 +330,13 @@ router.get("/getDB", async (req, res) => {
                 // Query for Avg and Tx data for the given network
                 const avgData = await Avg.findAll({
                     where: { net_id: idData },
-                    order: [['timestamp', 'ASC']]
+                    order: [['timestamp', 'DESC']]
                 });
                 // console.log({ avgData })
 
                 const txData = await Tx.findAll({
                     where: { net_id: idData },
-                    order: [['timestamp', 'ASC']]
+                    order: [['timestamp', 'DESC']]
                 });
                 // console.log({ txData })
 
