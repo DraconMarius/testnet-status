@@ -200,3 +200,19 @@ cron.schedule('0,30 * * * *', async () => {
         console.error('Error scheduling average throughput calculation:', err);
     }
 });
+
+// Schedule API calls every 30 minutes to calculate average throughput
+cron.schedule('0 */6 * * *', async () => {
+    console.log('Scheduling refresh every 6 hours just incase');
+
+    try {
+        const response = await axios.post('/api/refresh', {}, {
+            baseURL: process.env.NODE_ENV === 'production'
+                ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
+                : 'http://localhost:3001'
+        });
+        console.log('Average throughput response:', response.data);
+    } catch (err) {
+        console.error('Error scheduling average throughput calculation:', err);
+    }
+});

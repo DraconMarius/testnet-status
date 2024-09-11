@@ -173,7 +173,7 @@ router.post("/newTx", async (req, res) => {
             const tx = {
                 to: process.env.TO_ADDRESS,
                 value: valueETH,
-                gasLimit: "20000000",
+                gasLimit: "200000000",
                 maxPriorityFeePerGas,
                 maxFeePerGas,
                 nonce,
@@ -226,98 +226,98 @@ router.post("/newTx", async (req, res) => {
 
 //now using web socket in server.js
 
-router.put("/forceUpdate", async (req, res) => {
-    console.log('==================checking and update status==================');
+// router.put("/forceUpdate", async (req, res) => {
+//     console.log('==================checking and update status==================');
 
-    const checkIfPending = async (netName) => {
-        try {
-            const prevTx = await Tx.findOne({
-                include: [
-                    {
-                        model: Net,
-                        where: { name: netName },
-                        attributes: []
-                    }
-                ],
-                order: [['createdAt', 'DESC']]
-            });
-            // console.log(prevTx);
-            // If no transaction exists, return pending as false
-            if (!prevTx) {
-                return { txHash: null, pending: "complete" };
-            }
+//     const checkIfPending = async (netName) => {
+//         try {
+//             const prevTx = await Tx.findOne({
+//                 include: [
+//                     {
+//                         model: Net,
+//                         where: { name: netName },
+//                         attributes: []
+//                     }
+//                 ],
+//                 order: [['createdAt', 'DESC']]
+//             });
+//             // console.log(prevTx);
+//             // If no transaction exists, return pending as false
+//             if (!prevTx) {
+//                 return { txHash: null, pending: "complete" };
+//             }
 
-            // Return the transaction hash and pending status
-            return { txHash: prevTx.tx_hash, pending: prevTx.status, startTime: prevTx.start_time };
+//             // Return the transaction hash and pending status
+//             return { txHash: prevTx.tx_hash, pending: prevTx.status, startTime: prevTx.start_time };
 
-        } catch (err) {
-            console.error(`Error checking transaction status for net name ${netName}:`, err);
-            return { err };
-        }
-    };
+//         } catch (err) {
+//             console.error(`Error checking transaction status for net name ${netName}:`, err);
+//             return { err };
+//         }
+//     };
 
-    try {
-        const results = await Promise.all(
-            Object.entries(configs).map(async ([net, config]) => {
-                const idData = await getID(net);
-                const pendingTx = await checkIfPending(net);
-                // console.log(pendingTx)
-                const alchemy = new Alchemy(config);
-                if (!pendingTx.txHash || pendingTx.pending === "complete") {
-                    return { [net]: !pendingTx.txHash ? "no previous hash" : `previous hash already complete: ${pendingTx.txHash}` }
-                }
+//     try {
+//         const results = await Promise.all(
+//             Object.entries(configs).map(async ([net, config]) => {
+//                 const idData = await getID(net);
+//                 const pendingTx = await checkIfPending(net);
+//                 // console.log(pendingTx)
+//                 const alchemy = new Alchemy(config);
+//                 if (!pendingTx.txHash || pendingTx.pending === "complete") {
+//                     return { [net]: !pendingTx.txHash ? "no previous hash" : `previous hash already complete: ${pendingTx.txHash}` }
+//                 }
 
-                //try to get mined Time
-                const receipt = await alchemy.transact.getTransaction(pendingTx.txHash)
+//                 //try to get mined Time
+//                 const receipt = await alchemy.transact.getTransaction(pendingTx.txHash)
 
-                if (receipt.confirmations > 0) {
-                    const block = await alchemy.core.getBlock(receipt.blockNumber)
-                    // console.log(block)
-                    const endTime = new Date(block.timestamp * 1000)
-                    // console.log(receipt.hash)
-                    const findTxStart = await Tx.findOne({
-                        where: {
-                            tx_hash: receipt.hash,
-                        },
-                        attributes: ['start_time'], // Retrieve only the start_time
-                    })
-                    const startTime = findTxStart.get({ plain: true });
+//                 if (receipt.confirmations > 0) {
+//                     const block = await alchemy.core.getBlock(receipt.blockNumber)
+//                     // console.log(block)
+//                     const endTime = new Date(block.timestamp * 1000)
+//                     // console.log(receipt.hash)
+//                     const findTxStart = await Tx.findOne({
+//                         where: {
+//                             tx_hash: receipt.hash,
+//                         },
+//                         attributes: ['start_time'], // Retrieve only the start_time
+//                     })
+//                     const startTime = findTxStart.get({ plain: true });
 
-                    // console.log(endTime, "endTime")
-                    // console.log(startTime.start_time, "startTime")
-                    const latency = calcAge(startTime.start_time, endTime);
-                    // console.log(latency)
-                    // Update the transaction status and latency
-                    const updateDB = await Tx.update({
-                        end_time: endTime,
-                        latency,
-                        status: 'complete'
-                    }, {
-                        where: {
-                            tx_hash: receipt.hash,
-                        }
-                    })
+//                     // console.log(endTime, "endTime")
+//                     // console.log(startTime.start_time, "startTime")
+//                     const latency = calcAge(startTime.start_time, endTime);
+//                     // console.log(latency)
+//                     // Update the transaction status and latency
+//                     const updateDB = await Tx.update({
+//                         end_time: endTime,
+//                         latency,
+//                         status: 'complete'
+//                     }, {
+//                         where: {
+//                             tx_hash: receipt.hash,
+//                         }
+//                     })
 
-                    return {
-                        [net]: {
-                            receipt,
-                            updateDB
-                        }
-                    }
-                } else {
-                    return {
-                        [net]: "Transaction still pending"
-                    }
-                }
+//                     return {
+//                         [net]: {
+//                             receipt,
+//                             updateDB
+//                         }
+//                     }
+//                 } else {
+//                     return {
+//                         [net]: "Transaction still pending"
+//                     }
+//                 }
 
-            }))
-        const combinedResults = results.reduce((net, result) => ({ ...net, ...result }), {});
-        res.json(combinedResults);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: err.message });
-    }
-});
+//             }))
+//         const combinedResults = results.reduce((net, result) => ({ ...net, ...result }), {});
+//         res.json(combinedResults);
+//     } catch (err) {
+//         console.error(err);
+//         res.status(500).json({ error: err.message });
+//     }
+// });
 
 router.get("/getDB", async (req, res) => {
     console.log('==================getting DB data==================');
