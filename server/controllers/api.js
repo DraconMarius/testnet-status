@@ -173,7 +173,7 @@ router.post("/newTx", async (req, res) => {
             const tx = {
                 to: process.env.TO_ADDRESS,
                 value: valueETH,
-                gasLimit: "30000000",
+                gasLimit: (net === "Polygon") ? "40000000" : "20000000",
                 maxPriorityFeePerGas,
                 maxFeePerGas,
                 nonce,
