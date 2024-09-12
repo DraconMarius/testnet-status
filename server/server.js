@@ -211,7 +211,7 @@ cron.schedule('0 */6 * * *', async () => {
                 ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
                 : 'http://localhost:3001'
         });
-        console.log('Average throughput response:', response.data);
+        notifyClients({ message: 'update' });
     } catch (err) {
         console.error('Error scheduling average throughput calculation:', err);
     }

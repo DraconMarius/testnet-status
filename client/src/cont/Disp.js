@@ -15,7 +15,7 @@ function Disp() {
     const fetchData = async () => {
         try {
             const res = await getDB();
-            console.log('Fetched data:', res);
+            // console.log('Fetched data:', res);
             setDB(res);
         } catch (error) {
             console.error('Error fetching data:', error);
