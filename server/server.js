@@ -178,7 +178,7 @@ cron.schedule('0,30 * * * *', async () => {
                 ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
                 : 'http://localhost:3001'
         });
-        console.log('New transactions response:', response.data);
+        // console.log('New transactions response:', response.data);
         notifyClients({ message: 'update' });
     } catch (err) {
         console.error('Error scheduling new transactions:', err);
@@ -195,7 +195,7 @@ cron.schedule('0,30 * * * *', async () => {
                 ? 'https://testnet-status-7886b6dd6723.herokuapp.com'
                 : 'http://localhost:3001'
         });
-        console.log('Average throughput response:', response.data);
+        // console.log('Average throughput response:', response.data);
     } catch (err) {
         console.error('Error scheduling average throughput calculation:', err);
     }

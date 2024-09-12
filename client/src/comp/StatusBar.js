@@ -93,6 +93,14 @@ function StatusBar({ res, selectedNetwork }) {
                                             <td>{entry.tx?.latency || 'N/A'}</td>
                                         </tr>
                                         <tr>
+                                            <td><strong>maxPriorityFee / Gas:</strong></td>
+                                            <td>{`${entry.avg?.maxPriorityFee_perGas} gwei` || 'N/A'}</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>maxFee / Gas:</strong></td>
+                                            <td>{`${entry.avg?.maxFee_perGas} gwei` || 'N/A'}</td>
+                                        </tr>
+                                        <tr>
                                             <td><strong>Throughput:</strong></td>
                                             <td>{`${entry.avg?.avgThroughput} tx per sec` || 'N/A'}</td>
                                         </tr>
