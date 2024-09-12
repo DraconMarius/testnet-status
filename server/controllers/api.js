@@ -185,7 +185,7 @@ router.post("/newTx", async (req, res) => {
             const startTime = new Date();
             const sentTx = await alchemy.transact.sendTransaction(rawTx);
 
-            // console.log({ sentTx });
+            console.log({ [net]: sentTx });
             // Store the new transaction in the database
             const newTx = await Tx.create({
                 net_id: id,
@@ -199,15 +199,15 @@ router.post("/newTx", async (req, res) => {
 
             return newTx;
         } catch (err) {
-            const newTx = await Tx.create({
-                net_id: id,
-                tx_hash: "error",
-                start_time: startTime,
-                status: 'error',
-                timestamp: timeslot,
-                maxPriorityFee_perGas: Utils.formatUnits(maxPriorityFeePerGas, 'gwei'),
-                maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei'),
-            });
+            // const newTx = await Tx.create({
+            //     net_id: id,
+            //     tx_hash: "error",
+            //     start_time: startTime,
+            //     status: 'error',
+            //     timestamp: timeslot,
+            //     maxPriorityFee_perGas: Utils.formatUnits(maxPriorityFeePerGas, 'gwei'),
+            //     maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei'),
+            // });
             console.error(`Failed to send Tx on ${net} testnet`, err);
         }
     };
