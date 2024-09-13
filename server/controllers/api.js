@@ -159,6 +159,8 @@ router.post("/newTx", async (req, res) => {
         try {
             const gasPrices = await alchemy.core.getFeeData();
             const maxPriorityFeePerGas = gasPrices.maxPriorityFeePerGas;
+            const polygonPriority = Utils.formatUnits(maxPriorityFeePerGas, 'wei') + 1000000000
+            const polygonMax = Utils.formatUnits(maxFeePerGas, 'wei') + 1000000000
             const maxFeePerGas = gasPrices.maxFeePerGas;
             console.log({ [net]: { gasPrices, maxPriorityFeePerGas: Utils.formatUnits(maxPriorityFeePerGas, 'wei'), maxFeePerGas: Utils.formatUnits(maxFeePerGas, 'wei') } })
             // console.log(`${net} Gas Prices:', { maxPriority: ${maxPriorityFeePerGas}, maxFee: ${maxFeePerGas} }`);
@@ -174,8 +176,8 @@ router.post("/newTx", async (req, res) => {
                 to: process.env.TO_ADDRESS,
                 value: valueETH,
                 gasLimit: "30000",
-                maxPriorityFeePerGas,
-                maxFeePerGas,
+                maxPriorityFeePerGas: net === "Polygon" ? polygonPriority : maxPriorityFeePerGas,
+                maxFeePerGas: net === "Polygon" ? polygonMax : maxFeePerGas,
                 nonce,
                 type: 2,
                 chainId: chainId[net],
