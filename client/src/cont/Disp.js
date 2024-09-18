@@ -4,10 +4,14 @@ import StatusBar from '../comp/StatusBar';
 import loadingIcon from '../assets/loading.gif';
 import { getDB, refresh } from '../util/api';
 import { motion } from 'framer-motion';
+import Clock from 'react-clock';
+import 'react-clock/dist/Clock.css';
+
 
 function Disp() {
     const [loading, setLoading] = useState(true);
     const [db, setDB] = useState(null);
+    const [currentTime, setCurrentTime] = useState(new Date());
     const wsUri = process.env.REACT_APP_WS_URL || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//localhost:3001`;
     const wsRef = useRef(null);
 
@@ -55,6 +59,11 @@ function Disp() {
         };
     };
 
+    useEffect(() => {
+        const interval = setInterval(() => setCurrentTime(new Date()), 1000);
+
+        return () => clearInterval(interval);
+    }, []);
 
     useEffect(() => {
         fetchData();
@@ -65,6 +74,8 @@ function Disp() {
             if (wsRef.current) wsRef.current.close();
         };
     }, []);
+
+
 
     return (
         <motion.div className="hero-background" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
@@ -93,8 +104,22 @@ function Disp() {
                 >
                     <div className="hero-head has-text-centered">
                         <Nav />
-                        <div className="container">
-                            <div>Hero-head placeholder for scroll status maybe</div>
+                        <div className="container ">
+                            <div className="clock-container is-align-items-center is-justify-content-center is-flex has-text-dark">
+                                <Clock
+                                    value={currentTime}
+                                    renderNumbers={true}
+                                    hourHandLength={70}
+                                    minuteHandLength={90}
+                                    secondHandLength={100}
+                                    size={120}
+                                    hourHandWidth={6}
+                                    minuteHandWidth={4}
+                                    secondHandWidth={2}
+                                    style={{ margin: 'auto' }}
+                                />
+                                <p>{currentTime.toUTCString()}</p>
+                            </div>
                         </div>
                     </div>
                     <div className="hero-body is-justify-content-center">
@@ -102,9 +127,6 @@ function Disp() {
 
                             {Object.keys(db).map((networkKey) => (
                                 <div className="container is-justify-content-center" key={networkKey}>
-                                    <div className="block">
-                                        <h2 className="title is-6 has-text-left">{networkKey}</h2>
-                                    </div>
                                     <StatusBar
                                         res={db}
                                         selectedNetwork={networkKey}

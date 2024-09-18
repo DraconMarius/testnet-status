@@ -18,6 +18,7 @@ const PORT = process.env.PORT || 3001;
 const Net = require("./db/models/net");
 const Avg = require("./db/models/avg");
 const Tx = require("./db/models/tx");
+const Error = require("./db/models/error");
 
 const { Alchemy, Network, AlchemySubscription, Utils } = require('alchemy-sdk');
 const { calcAge } = require('./util/age');
@@ -89,6 +90,7 @@ sequelize.sync({ force: false })
     .then(() => Net.sync())
     .then(() => Avg.sync())
     .then(() => Tx.sync())
+    .then(() => Error.sync())
     .then(() => {
         const server = app.listen(PORT, () => {
             console.log(`now listening at http://localhost:${PORT}/`);

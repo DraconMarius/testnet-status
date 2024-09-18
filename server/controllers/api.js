@@ -1,5 +1,5 @@
 const router = require("express").Router();
-const { Net, Avg, Tx } = require("../db/models");
+const { Net, Avg, Tx, Error } = require("../db/models");
 
 const { Alchemy, Network, Utils, Wallet } = require('alchemy-sdk');
 
@@ -157,6 +157,13 @@ router.post("/newTx", async (req, res) => {
         const wallet = new Wallet(process.env.SECRET_KEY);
 
         try {
+            const nonce = await alchemy.core.getTransactionCount(process.env.FROM_ADDRESS, "pending");
+            console.log(`${nonce} <- nonce`);
+            const timeslot = getTime();
+
+            const valueETH = Utils.parseEther("0.00001");
+            // console.log(valueETH);
+
             const gasPrices = await alchemy.core.getFeeData();
             const maxPriorityFeePerGas = gasPrices.maxPriorityFeePerGas;
             const polygonPriority = Number.parseInt(Utils.formatUnits(maxPriorityFeePerGas, 'wei'), 10) + 23500000000
@@ -164,18 +171,11 @@ router.post("/newTx", async (req, res) => {
             const polygonMax = Number.parseInt(Utils.formatUnits(maxFeePerGas, 'wei'), 10) + 23500000000
             console.log({ [net]: { gasPrices, maxPriorityFeePerGas: Utils.formatUnits(maxPriorityFeePerGas, 'wei'), maxFeePerGas: Utils.formatUnits(maxFeePerGas, 'wei') } })
             // console.log(`${net} Gas Prices:', { maxPriority: ${maxPriorityFeePerGas}, maxFee: ${maxFeePerGas} }`);
-            const timeslot = getTime();
-
-            const nonce = await alchemy.core.getTransactionCount(process.env.FROM_ADDRESS, "pending");
-            console.log(`${nonce} <- nonce`);
-
-            const valueETH = Utils.parseEther("0.00001");
-            // console.log(valueETH);
 
             const tx = {
                 to: process.env.TO_ADDRESS,
                 value: valueETH,
-                gasLimit: "30000",
+                gasLimit: "300000",
                 maxPriorityFeePerGas: net === "Polygon" ? polygonPriority : maxPriorityFeePerGas,
                 maxFeePerGas: net === "Polygon" ? polygonMax : maxFeePerGas,
                 nonce,
@@ -187,7 +187,8 @@ router.post("/newTx", async (req, res) => {
             const startTime = new Date();
             const sentTx = await alchemy.transact.sendTransaction(rawTx);
 
-            console.log({ [net]: sentTx });
+            // console.log({ [net]: sentTx });
+
             // Store the new transaction in the database
             const newTx = await Tx.create({
                 net_id: id,
@@ -195,21 +196,20 @@ router.post("/newTx", async (req, res) => {
                 start_time: startTime,
                 status: 'pending',
                 timestamp: timeslot,
-                maxPriorityFee_perGas: Utils.formatUnits(maxPriorityFeePerGas, 'gwei'),
-                maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei'),
+                maxPriorityFee_perGas: Utils.formatUnits(net === "Polygon" ? polygonPriority : maxPriorityFeePerGas, 'gwei'),
+                maxFee_perGas: Utils.formatUnits(net === "Polygon" ? polygonMax : maxFeePerGas, 'gwei'),
             });
+
 
             return newTx;
         } catch (err) {
-            // const newTx = await Tx.create({
-            //     net_id: id,
-            //     tx_hash: "error",
-            //     start_time: startTime,
-            //     status: 'error',
-            //     timestamp: timeslot,
-            //     maxPriorityFee_perGas: Utils.formatUnits(maxPriorityFeePerGas, 'gwei'),
-            //     maxFee_perGas: Utils.formatUnits(maxFeePerGas, 'gwei'),
-            // });
+            const timeslot = getTime();
+
+            const error = await Error.create({
+                net_id: id,
+                timestamp: timeslot,
+                error_msg: err.message
+            });
             console.error(`Failed to send Tx on ${net} testnet`, err);
         }
     };

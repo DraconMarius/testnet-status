@@ -99,17 +99,38 @@ $background-dark: url('./assets/alchemyD.png');
   height: 330px;
   scroll-behavior: smooth;
   gap: 8px;
-  justify-content: flex-start; /* Let items stay aligned normally */
-  align-items: center;
+  justify-content: flex-start;
+  /* Let items stay aligned normally */
+  align-items: flex-end;
   overflow-x: scroll;
-  padding: 0 50px; /* Add padding to avoid clipping */
-  position: relative; /* Needed for absolute positioning of the popup */
+  padding: 0 30px;
+  /* Add padding to avoid clipping */
+  position: relative;
+  /* Needed for absolute positioning of the popup */
+}
+
+::-webkit-scrollbar {
+  background-color: rgba(189, 190, 249, 0.41);
+
+  @media (prefers-color-scheme: dark) {
+    background-color: rgba(39, 35, 54, 0.672);
+  }
+}
+
+::-webkit-scrollbar-thumb {
+  border-radius: 16px;
+  width: 10em;
+  background-color: #2222227c;
+
+  @media (prefers-color-scheme: dark) {
+    background-color: rgba(189, 190, 249, 0.41);
+  }
 }
 
 
 .status-item {
   width: 13px;
-  height: 100px;
+  height: 50px;
   background-color: #00d1b2;
   border-radius: 3px;
   justify-content: center;
@@ -119,7 +140,7 @@ $background-dark: url('./assets/alchemyD.png');
 }
 
 .status-item.is-focused {
-  z-index: 1;
+  z-index: 0;
 
 }
 
@@ -136,7 +157,7 @@ $background-dark: url('./assets/alchemyD.png');
   display: flex;
   justify-content: center;
   align-items: flex-start;
-  z-index: 2;
+  // z-index: 2;
   position: relative;
 }
 
@@ -152,4 +173,12 @@ $background-dark: url('./assets/alchemyD.png');
   @media (prefers-color-scheme: dark) {
     color: $lavender-web;
   }
+}
+
+.time-marker {
+  transform: rotate(180deg);
+  color: #333;
+  font-size: 12px;
+  z-index: 0;
+  writing-mode: vertical-rl;
 }
