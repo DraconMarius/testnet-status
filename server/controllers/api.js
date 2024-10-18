@@ -351,6 +351,11 @@ router.get("/getDB", async (req, res) => {
                 });
                 // console.log({ txData })
 
+                const errData = await Error.findAll({
+                    where: { net_id: idData },
+                    order: [['timestamp', 'DESC']]
+                });
+
                 const combinedData = avgData.map(avg => {
                     const matchingTx = txData.find(tx => tx.timestamp.getTime() === avg.timestamp.getTime());
                     return {
