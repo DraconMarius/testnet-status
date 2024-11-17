@@ -97,16 +97,16 @@ sequelize.sync({ force: false })
         });
         wss = new WebSocket.Server({ server });
 
-        //ping to keep connection open instead
-        setInterval(() => {
-            if (wss) {
-                wss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({ type: 'ping' }));
-                    }
-                });
-            }
-        }, 30000);
+        // //ping to keep connection open instead
+        // setInterval(() => {
+        //     if (wss) {
+        //         wss.clients.forEach((client) => {
+        //             if (client.readyState === WebSocket.OPEN) {
+        //                 client.send(JSON.stringify({ type: 'ping' }));
+        //             }
+        //         });
+        //     }
+        // }, 30000);
 
         wss.on('connection', (ws) => {
             console.log('Frontend connected');

@@ -371,7 +371,7 @@ router.get("/getDB", async (req, res) => {
 
         // Combine the results into a single object
         const combinedResults = results.reduce((acc, result) => ({ ...acc, ...result }), {});
-        console.log(combinedResults);
+        // console.log(combinedResults);
 
         res.json(combinedResults);
     } catch (err) {
